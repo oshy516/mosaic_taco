@@ -2,15 +2,9 @@
 \section{Evaluation}
 \label{sec:eval}
 
-We evaluate \name across three generations of NVIDIA GPUs whose hardware and
-software platforms are summarized in \autoref{tab:platforms}. The architectural
-parameters required by the cost model, including memory capacities, execution
-limits, and the profiled $L$ and $c$ constants described in
-\autoref{sec:gpu-target-profiling} and used by \autoref{sec:cost}, are gathered
-once per GPU through the target description of \autoref{sec:overview} and reused
-across all kernels.
+We evaluate \name across three generations of NVIDIA GPUs whose hardware and software platforms are summarized in \autoref{tab:platforms}. The architectural parameters required by the cost model, including memory capacities, execution limits, and the profiled $L$ and $c$ constants described in \autoref{sec:gpu-target-profiling} and used by \autoref{sec:cost}, are gathered once per GPU through the target description of \autoref{sec:overview} and reused across all kernels.
 
-\begin{table}[ht]
+\begin{table}[htbp]
   \centering
   \caption{Experimental platforms used in the evaluation.}
   \label{tab:platforms}
@@ -31,19 +25,13 @@ across all kernels.
   \end{tabular}
 \end{table}
 
-\name consumes schedule metadata from PPCG~0.09~\cite{ppcg-rep} for affine
-kernels and TVM~0.22.dev0~\cite{tvm-rep} for tensor operators and workloads. We
-compare against PPCG's fixed heuristic, the EATSS analytical selector embedded
-in PPCG, and the TVM MetaSchedule search autotuner. To isolate
-execution-space selection, \name operates on the same transformed programs as
-each baseline; only tile sizes, block dimensions, and shared memory placement
-differ.
+\name consumes schedule metadata from PPCG~0.09~\cite{ppcg-rep} for affine kernels and TVM~0.22.dev0~\cite{tvm-rep} for tensor operators and workloads. We compare against PPCG's fixed heuristic and its state-of-the-art EATSS analytical selector~\cite{eatss}, and the TVM MetaSchedule autotuner~\cite{metaschedule}. To isolate execution space selection, \name operates on the same transformed programs as each baseline; only tile sizes, block dimensions, and shared memory placement differ.
 
 \subsection{Performance on PolyBench Kernels}
 \label{subsec:polybench}
 
 % polybench table
-\begin{table*}[t]
+\begin{table*}[htbp]
 \centering
 \caption{Execution time, solver time, and speedups on PolyBench benchmarks.}
 \label{tab:benchmark}
@@ -97,62 +85,14 @@ seidel-2d & 757.94 & 0.270 & 1.27 & 1.51 & 5.63 & 935.38 & 0.241 & 1.01 & 1.41 &
 }
 \end{table*}
 
+We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils, comparing against the PPCG heuristic and EATSS on all three GPUs. \autoref{tab:benchmark} reports, for each platform, \name's execution and solver times together with its speedups over PPCG and EATSS and the reduction in selection overhead relative to EATSS. Speedup means are geometric while solver-time means are arithmetic. \name consistently outperforms both baselines across all three architectures. Over PPCG, it achieves mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ on the RTX 4090, A100, and V100, respectively; over EATSS, it achieves $1.37\times$, $1.89\times$, and $1.55\times$. Gains are largest on contraction-heavy kernels, where the \autoref{sec:bg-challenges} loop is most pronounced: on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ over PPCG. The advantage holds as register and shared memory budgets vary across GPU generations.
 
-We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench}
-spanning reductions, contractions, and stencils, comparing against the PPCG
-heuristic and the EATSS analytical selector on all three GPUs. \autoref{tab:benchmark}
-reports, for each platform, \name's execution time and solver time together
-with its speedups over PPCG and EATSS and the reduction in selection overhead
-relative to EATSS. Speedup means are geometric; solver-time means are
-arithmetic. \name consistently outperforms both baselines across all three
-architectures. Over the PPCG heuristic, it achieves geometric-mean speedups of
-$1.21\times$, $1.44\times$, and $1.49\times$ on the RTX 4090, A100, and V100,
-respectively; over EATSS it achieves $1.37\times$, $1.89\times$, and
-$1.55\times$. Gains are largest on contraction-heavy kernels, where the
-\autoref{sec:bg-challenges} loop is most pronounced: on the A100, \name
-improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ over
-PPCG. The advantage holds as register and shared memory budgets vary across GPU
-generations.
-
-Three corner cases are worth noting. \name is occasionally within \(5\%\) of
-EATSS on the A100 for the small memory-bound kernels \texttt{atax},
-\texttt{bicg}, and \texttt{gesummv}, where the analytical and searched optima
-nearly coincide. The kernel \texttt{trmm} on the A100 is marginally below PPCG
-(\(0.93\times\)) and \texttt{trisolv} is essentially tied with both baselines
-(\(\approx1.00\times\)) on every platform, reflecting limited headroom for
-execution-space tuning. EATSS fails to produce configurations for
-\texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}, shown as ``--'' in
-\autoref{tab:benchmark}, whereas \name handles all of them through the same
-model.
+\name is occasionally within \(5\%\) of EATSS on the A100 for the small memory-bound kernels \texttt{atax}, \texttt{bicg}, and \texttt{gesummv}, where the analytical and searched optima nearly coincide. The \texttt{trmm} kernel on A100 is marginally below PPCG (\(0.93\times\)) and \texttt{trisolv} is essentially tied with both baselines (\(\approx1.00\times\)) on every platform, reflecting limited headroom for execution space tuning. EATSS fails to produce configurations for \texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}, shown as ``--'' in \autoref{tab:benchmark}.
 
 \subsection{Performance on Deep Learning Operators}
 \label{subsec:operators}
 
-% operators vs PPCG
-
-
-% operator_tvm
-
-
-
-We next evaluate \name on five deep-learning operators. CNN, LSTM, and RNN
-come from the PolyNN suite~\cite{polynn}; FNN and Embedding are extracted from
-the end-to-end network workloads. \autoref{fig:network-operators} reports the
-speedup of \name over PPCG on each operator. \name delivers large gains on CNN
-(\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of
-PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of
-\(1.88\times\).
-
-These operators cover different execution regimes. CNN and FNN are
-contraction/GEMM-like and therefore compute-intensive, but FNN is small
-and regular enough that the PPCG default already lands close to the
-configuration selected by \name. LSTM, in contrast, is a representative
-memory-intensive recurrent operator; its performance is dominated more by
-data movement than by arithmetic intensity, leaving less room for the
-register-blocking trade-offs captured by the $\phi$ ratio. Embedding is
-also data-movement dominated, but its default PPCG mapping leaves
-substantial opportunity for \name's placement and occupancy model to
-improve the execution configuration.
+We next evaluate \name on five deep learning operators. CNN, LSTM, and RNN come from the PolyNN suite~\cite{polynn}; FNN and Embedding are extracted from the end-to-end network workloads. \autoref{fig:network-operators} reports the speedup of \name over PPCG. \name delivers large gains on CNN (\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of \(1.88\times\).
 
 \begin{figure}[!tbp]
 \centering
@@ -223,19 +163,14 @@ improve the execution configuration.
     at ([xshift=-20pt]$(group c1r1.west)!0.5!(group c1r2.west)$)
     {Execution time speedup};
 \end{tikzpicture}
-\caption{Speedup of \name over PPCG on network operators.}
+\caption{Performance of deep learning operators.}
 \Description{Bar chart comparing PPCG and \name speedups on CNN, LSTM, RNN, FNN, and embedding operators.}
 \label{fig:network-operators}
 \end{figure}
 
-To compare \name against search-based autotuning, we integrate it into
-TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial
-budgets. \autoref{fig:network-operator-curves} plots execution time and
-selection cost for six operators. \name is flat because it solves once, whereas
-MetaSchedule needs hundreds to thousands of trials to reach comparable
-execution time and pays search cost that grows with the budget. \name therefore
-attains autotuner-level performance while reducing selection overhead by
-\(2\)--\(4\) orders of magnitude.
+These operators cover different execution regimes. CNN and FNN are contraction/GEMM-like and therefore compute-intensive, but FNN is small and regular enough that the PPCG default already lands close to the configuration selected by \name. LSTM, in contrast, is a representative memory-intensive recurrent operator; its performance is dominated more by data movement than by arithmetic intensity, leaving less room for the register-blocking trade-offs captured by the $\phi$ ratio. Embedding is also data-movement dominated, but its default PPCG mapping leaves substantial opportunity for \name's placement and occupancy model to improve the execution configuration.
+
+To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. \name is flat because it solves once, whereas MetaSchedule needs hundreds to thousands of trials to reach comparable execution time and pays search cost that grows with the budget. \name therefore attains autotuner-level performance while reducing selection overhead by \(2\)--\(4\) orders of magnitude.
 
 \begin{figure}[!tbp]
 \centering
@@ -552,9 +487,7 @@ attains autotuner-level performance while reducing selection overhead by
 };
 
 \end{tikzpicture}
-\caption{Execution time and search/solver overhead versus trial budget for six
-operators, comparing \name with TVM MetaSchedule. Solid lines show execution
-time; dashed lines show selection cost.}
+\caption{Execution time and search/solver overhead for six operators, comparing with TVM MetaSchedule. Solid lines show execution time; dashed lines show selection cost.}
 \Description{Six curve plots for CNN, LSTM, RNN, FNN, embedding, and matmul comparing \name and tvm SSSRRSRS execution time and search or solver overhead.}
 \label{fig:network-operator-curves}
 \end{figure}
@@ -562,26 +495,9 @@ time; dashed lines show selection cost.}
 \subsection{Performance on End-to-End Workloads}
 \label{subsec:e2e}
 
+We compose the operators into three end-to-end workloads spanning the major network families: AlexNet~\cite{alexnet} (CNN), Seq2Seq~\cite{lstm} (RNN), and BertTiny~\cite{bert} (Transformer). \autoref{fig:e2e-fourbar} reports the per-network speedup of \name over both PPCG and TVM, with the baseline execution times shown on the left of the corresponding bars. Over PPCG, \name achieves $1.66\times$, $9.23\times$, and $4.90\times$ on AlexNet, Seq2Seq, and BertTiny, respectively, for a mean speedup of $4.22\times$. Over TVM MetaSchedule, \name achieves $1.16\times$, $1.05\times$, and $1.13\times$, for a mean of $1.11\times$. These results demonstrate that \name slightly exceeds a state-of-the-art autotuner on full workloads without performing any architecture-space search, while delivering large improvements over the heuristic configurations of PPCG. The end-to-end gains over PPCG are more pronounced than the per-operator gains of \autoref{subsec:operators}, as consistently good execution space choices across consecutive layers compound into a larger overall improvement.
 
-
-We compose the operators into three end-to-end workloads spanning the
-major network families: AlexNet~\cite{alexnet} (CNN), Seq2Seq~\cite{lstm} (RNN), and BertTiny~\cite{bert}
-(Transformer). \autoref{fig:e2e-fourbar} reports the per-network speedup of \name over
-both PPCG and TVM, with the baseline execution times shown on the left of
-the corresponding bars. Over the PPCG defaults, \name achieves
-$1.66\times$, $9.23\times$, and $4.90\times$ on AlexNet, Seq2Seq, and
-BertTiny, respectively, for a geometric-mean speedup of $4.22\times$.
-Over the tuned TVM MetaSchedule baseline, \name achieves $1.16\times$,
-$1.05\times$, and $1.13\times$, for a geometric mean of $1.11\times$.
-These results demonstrate that \name matches or slightly exceeds a
-state-of-the-art autotuner on full workloads without performing any
-architecture-space search, while delivering large improvements over the
-heuristic configurations of PPCG. The end-to-end gains over PPCG are more
-pronounced than the per-operator gains of \autoref{subsec:operators}, as consistently good
-execution-space choices across consecutive layers compound into a larger
-overall improvement.
-
-\begin{figure}[!tbp]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
@@ -640,7 +556,7 @@ overall improvement.
 \node[rotate=90, anchor=south, font=\scriptsize]
     at ([xshift=-20pt]$(group c1r1.west)!0.5!(group c1r2.west)$) {Execution time speedup};
 \end{tikzpicture}
-\caption{Per-network speedup of \name over PPCG and TVM.}
+\caption{Performance of end-to-end workloads.}
 \Description{Four bars per network: PPCG baseline, \name over PPCG, TVM baseline, and \name over TVM.}
 \label{fig:e2e-fourbar}
 \end{figure}
@@ -648,18 +564,9 @@ overall improvement.
 \subsection{Ablation Study}
 \label{subsec:ablation}
 
+We ablate the main modeling components on representative kernels and operators. FP-Wave uses the quantized wave objective with a fixed placement; RF-Wave adds the conservative register-feasibility filter; the full \name model further enumerates shared memory placement schemes. Using FP-Wave as the baseline, RF-Wave improves performance by a  mean of $1.37\times$, while full \name reaches $1.84\times$. The largest gain comes on CNN, where register filtering and placement selection together improve the selected configuration from $265.793$~ms to $95.851$~ms.
 
-
-We ablate the main modeling components on representative kernels and
-operators. FP-Wave uses the quantized wave objective with a fixed
-placement; RF-Wave adds the conservative register-feasibility filter; the
-full \name model further enumerates shared memory placement schemes. Using
-FP-Wave as the baseline, RF-Wave improves performance by a geometric mean
-of $1.37\times$, while full \name reaches $1.84\times$. The largest gain
-comes on CNN, where register filtering and placement selection together
-improve the selected configuration from $265.793$~ms to $95.851$~ms.
-
-\begin{figure}[!tbp]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -713,7 +620,7 @@ improve the selected configuration from $265.793$~ms to $95.851$~ms.
 \legend{FP-Wave, RF-Wave, Mosaic}
 \end{axis}
 \end{tikzpicture}
-\caption{Ablation of \name's analytical selection components. FP-Wave is the fixed-placement wave model baseline; RF-Wave adds the register-feasibility filter; Mosaic adds outer shared memory placement enumeration.}
+\caption{Ablation study on \name's individual components.}
 \Description{Grouped bar chart showing execution-time speedups of RF-Wave and Mosaic over the FP-Wave baseline on covariance, syrk, 3mm, gemm, and CNN.}
 \label{fig:ablation}
 \end{figure}
@@ -721,17 +628,4 @@ improve the selected configuration from $265.793$~ms to $95.851$~ms.
 \subsection{Solver Overhead and Scalability}
 \label{subsec:overhead}
 
-Finally, we examine the cost of \name's analytical selection, reported in
-the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solve
-in well under one second for the large majority of kernels and in at most
-a few seconds in the most demanding case (e.g., \texttt{syr2k} at
-$3.32$~s on the RTX 4090), since the feasible domain is bounded by the
-guard-free candidate sets of \autoref{sec:abstraction} and pruned by the conservative
-filters of \autoref{sec:constraints} before the MILP is ever invoked. Relative to EATSS,
-\name reduces selection overhead by geometric-mean factors of
-$12.6\times$, $13.6\times$, and $13.9\times$ on the RTX 4090, A100, and
-V100, respectively, and the gap relative to the trial-based search of TVM
-spans several orders of magnitude (\autoref{fig:network-operator-curves}). As with the per-architecture
-profile, this selection cost is a one-time, compile-time expense that no
-runtime tuning loop contributes to, confirming that \name's analytical
-formulation scales to large, real-world kernels and workloads.
+Finally, we examine the cost of \name's analytical selection, reported in the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solving in well under one second for the large majority of kernels and in at most a few seconds in the most demanding case (e.g., \texttt{syr2k} at $3.32$~s on the RTX 4090), since the feasible domain is bounded by the guard-free candidate sets of \autoref{sec:abstraction} and pruned by the conservative filters of \autoref{sec:constraints} before the MILP is ever invoked. Relative to EATSS, \name reduces selection overhead by mean factors of $12.6\times$, $13.6\times$, and $13.9\times$ on RTX 4090, A100, and V100, respectively, and the gap relative to the trial-based search of TVM spans several orders of magnitude (\autoref{fig:network-operator-curves}). As with the per-architecture profile, this selection cost is a one-time, compile-time expense that no runtime tuning loop contributes to, confirming that \name's analytical formulation scales to large, real-world kernels and workloads.

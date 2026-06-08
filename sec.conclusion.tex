@@ -2,27 +2,6 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented \name, a framework that treats GPU execution-space optimization as
-a first-class problem solved analytically rather than folded into scheduling or
-autotuning. Its central observation is the feedback loop of
-\autoref{sec:bg-challenges}: tile, block, placement, occupancy, and register
-pressure must be selected jointly. \name combines quantized wave cost, the
-\(\phi\) ratio, conservative register filtering, placement enumeration, and a
-\textsc{MILP}+LP solver, yielding balanced register blocking as a
-contraction-specific byproduct. Across PolyBench kernels, deep-learning
-operators, and end-to-end workloads on three NVIDIA GPU generations, \name
-achieves geometric-mean speedups of 1.21--1.49\(\times\) over PPCG and
-1.37--1.89\(\times\) over EATSS on PolyBench, 1.88\(\times\) over PPCG on
-deep-learning operators, and 4.22\(\times\) over PPCG on end-to-end workloads,
-while reducing selection overhead by 12--14\(\times\) over EATSS and by two to
-four orders of magnitude over trial-based autotuning.
+We presented \name, a unified analytical framework for GPU execution space optimization. Unlike existing systems that rely on heuristics or empirical search, \name treats tile sizes, thread block shapes, shared memory placement, occupancy, and register pressure as a joint code generation problem. By combining compile-time program information with architectural resource modeling, \name analytically derives efficient execution configurations without generating and evaluating large numbers of GPU kernels. Experimental results on PolyBench kernels, deep learning operators, and end-to-end workloads across three NVIDIA GPU generations demonstrate that \name consistently outperforms PPCG and EATSS while exceeding the performance of TVM MetaSchedule with substantially lower optimization overhead. These results suggest that architecture-aware execution space optimization can be addressed through analytical reasoning rather than architecture-space search.
 
-\name has two main limitations. \emph{First}, it is scoped to regular affine
-kernels and tensor operators describable through schedule metadata; irregular
-control flow, data-dependent access patterns, and non-rectangular tile shapes
-fall outside its current model. \emph{Second}, its cost model is a
-hardware-informed proxy that deliberately omits warp scheduling, caching, and
-pipeline overlap, and can therefore be coarse for small, purely memory-bound
-kernels. We plan to broaden the modeled kernel classes and incorporate finer
-microarchitectural effects, extending the analytical formulation to a wider range
-of GPU code-generation scenarios without reintroducing architecture-space search.
+Currently, \name targets regular affine kernels and tensor operators represented via schedule metadata. Extending it to irregular programs and incorporating finer-grained microarchitectural effects, such as cache behavior and pipeline overlap, are promising directions for future work.

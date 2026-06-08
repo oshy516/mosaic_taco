@@ -1,47 +1,21 @@
 % !TEX root =  mosaic.tex
-\section{Metadata Extraction and GPU Target Profiling}
+\section{Metadata Extraction and GPU Profiling}
 \label{sec:metadata}
 
-\autoref{sec:metadata} and \autoref{sec:model} form the analytical core of \name. This section explains how \name converts a transformed program and a target \gpu into the constants required by the model; \autoref{sec:model} then uses those constants to construct a finite execution-space optimization problem. This separation is what keeps \name compiler independent: compiler-specific IRs are used only to emit lightweight schedule metadata, while all resource reasoning happens outside the backend.
-
-\name instantiates its analytical model from two sources: compile-time metadata extracted from the transformed program and target-specific constants obtained once per \gpu architecture. The first source describes the computation and its transformed loop structure; the second describes the resource limits and effective costs of the target. Together, they determine the candidate variables, resource footprints, feasibility constraints, and cost terms used by the solver.
+This section explains how \name converts a transformed program and a target \gpu into the constants required by \autoref{eq:two-level}. \name instantiates its analytical model from two sources: compile-time metadata extracted from the transformed program and target-specific constants obtained once per \gpu architecture. The first source describes the computation and its transformed loop structure; the second describes the resource limits and effective costs of the target. Together, they determine the candidate variables, resource footprints, feasibility constraints, and cost terms used by the solver.
 
 \subsection{Compile-Time Metadata}
 \label{sec:compile-time-metadata}
 
-\name extracts metadata from transformed programs rather than from the original source code. The transformed representation exposes the loop order and mapping decisions already made by the scheduler, allowing \name to optimize execution-space parameters without redoing transformation scheduling.
+\name extracts metadata from transformed programs. The transformed representation exposes the loop order and mapping decisions already made by the scheduler, allowing \name to optimize execution space parameters without redoing transformation scheduling.
 
-The metadata falls into several groups, each tied directly to the model. These
-groups are chosen to capture exactly the information the cost model requires:
-loop structure drives candidate generation, array metadata drives traffic and
-placement decisions, statement metadata drives compute and synchronization
-cost, and GPU-specific mapping metadata closes the occupancy--register loop.
-Loop structure records dimension names, bounds, schedule order, and step sizes,
-defining tile and block candidate sets. \(N_d\) denotes the extent (size) of
-loop dimension \(d\), so the dimension iterates over \([0,N_d)\) with \(N_d\)
-points; the tile candidate set of \autoref{eq:tile-candidates} and the
-reduction work \(K_{\mathit{total}}\) of \autoref{eq:reduction-work} are
-computed accordingly. Dimension annotations record
-permutable, coincident, or otherwise parallelizable dimensions, from which
-\name classifies \(\mathcal{P}\), \(\mathcal{R}\), and serial dimensions
-\(\mathcal{D}\).
-Array metadata records affine accesses, read/write polarity, layout, coalescing
-direction, and tile footprints, determining memory traffic, shared memory
-capacity, accumulator placement, and staging candidates. Statement metadata
-records arithmetic counts, memory-reference counts, and synchronization sites,
-which instantiate compute and barrier costs. GPU-specific mapping metadata adds
-block/thread mappings, shared memory staging candidates, register-blocking
-factors \(R_d=\tau_d/b_d\), and coalescing information.
+The metadata falls into several groups, each tied directly to the model. These groups are chosen to capture exactly the information the cost model requires: loop structure drives candidate generation, array metadata drives traffic and placement decisions, statement metadata drives compute and synchronization cost, and GPU-specific mapping metadata closes the occupancy--register loop. Loop structure records dimension names, bounds, schedule order, and step sizes, defining tile and block candidate sets. \(N_d\) denotes the extent (size) of loop dimension \(d\), so the dimension iterates over \([0,N_d)\) with \(N_d\) points; the tile candidate set of \autoref{eq:tile-candidates} and the reduction work \(K_{\mathit{total}}\) of \autoref{eq:reduction-work} are computed accordingly. Dimension annotations record permutable, coincident (i.e., parallelizable) dimensions, from which \name classifies \(\mathcal{P}\), \(\mathcal{R}\), and serial dimensions \(\mathcal{D}\). Array metadata records affine accesses, read/write polarity, layout, coalescing direction, and tile footprints, determining memory traffic, shared memory capacity, accumulator placement, and staging candidates. Statement metadata records arithmetic counts, memory-reference counts, and synchronization sites, which instantiate compute and barrier costs. GPU-specific mapping metadata adds block/thread mappings, shared memory staging candidates, register-blocking factors \(R_d=\tau_d/b_d\), and coalescing information.
 
 The shared memory placement candidates are deliberately restricted. They are drawn from read-only references whose tile footprints can be expressed as functions of the candidate tile sizes. Read--write accumulator references are not enumerated as shared memory placements; they are modeled as private register state. Write-only references generally do not enter the placement enumeration because staging them does not reduce global-read traffic, except for backend-specific coalescing restoration already captured by the placement rules. This restriction keeps the outer enumeration small while retaining the placement choices that materially affect reuse, shared memory footprint, and occupancy.
 
-\autoref{fig:gemm-schedule-metadata} illustrates metadata construction using the
-default PPCG schedule of GEMM. In general, \name requires only the categories
-above; polyhedral compilers expose them through schedule trees and affine access
-maps, while TVM-style compilers expose them through schedule traces and tensor
-access metadata.
+\autoref{fig:gemm-schedule-metadata} illustrates metadata construction using the default PPCG schedule of the running GEMM example. In general, \name requires only the categories above; polyhedral compilers expose them through schedule trees and affine access maps, while TVM-style compilers expose them through schedule traces and tensor access metadata.
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 \resizebox{0.95\columnwidth}{!}{%
 \begin{tikzpicture}[
@@ -232,34 +206,20 @@ at ([xshift=0mm,yshift=-1.5mm]bandone_text.south west)
 
 \end{tikzpicture}%
 }
-\caption{GEMM metadata construction (\autoref{sec:compile-time-metadata}).
-  Schedule metadata is extracted from the PPCG schedule tree and combined
-  with a one-time hardware profile. Dimensions \(i,j\) carry
-  \texttt{permutable=1} and \texttt{parallelizable=1}, and map to
-  \(\mathcal{P}=\{i,j\}\); dimension \(k\) carries
-  \texttt{permutable=1} but is absent from all write footprints and maps to
-  \(\mathcal{R}=\{k\}\); \(\mathcal{D}=\emptyset\) for GEMM.
-  \(S_2\) performs 1 mul (\(T_{\mathrm{init}}\)); \(S_6\) performs
-  2 mul + 1 add, whose operation counts contribute to
-  \(T_{\mathrm{compute}}\).}
-\Description{A compact single-column flow diagram showing schedule metadata
-and a hardware profile feeding Mosaic analytical metadata for GEMM.}
+\caption{GEMM metadata construction. Schedule metadata is extracted from the PPCG schedule tree and combined with a one-time hardware profile. Dimensions \(i,j\) carry \texttt{permutable=1} and \texttt{parallelizable=1}, and map to
+  \(\mathcal{P}=\{i,j\}\); dimension \(k\) carries \texttt{permutable=1} but is absent from all write footprints and maps to \(\mathcal{R}=\{k\}\); \(\mathcal{D}=\emptyset\) for GEMM. \(S_2\) performs 1 mul (\(T_{\mathrm{init}}\)); \(S_6\) performs 2 mul + 1 add, whose operation counts contribute to \(T_{\mathrm{compute}}\).}
+\Description{A compact single-column flow diagram showing schedule metadata and a hardware profile feeding Mosaic analytical metadata for GEMM.}
 \label{fig:gemm-schedule-metadata}
 \end{figure}
 
-In this example, \(\mathcal{P}=\{i,j\}\) creates \(\tau_i,\tau_j\) and
-\(b_i,b_j\); \(\mathcal{R}=\{k\}\) creates \(\tau_k\) but no block dimension;
-and \(R_i=\tau_i/b_i\), \(R_j=\tau_j/b_j\) are per-thread register-blocking
-factors. The read-only operands give
-\(\Sigma_{\mathit{cand}}=\{A,B\}\), whose four placement schemes change the
-footprint, traffic, and resident-block bound used in \autoref{sec:model}.
+In this example, \(\mathcal{P}=\{i,j\}\) creates \(\tau_i,\tau_j\) and \(b_i,b_j\); \(\mathcal{R}=\{k\}\) creates \(\tau_k\) but no block dimension; and \(R_i=\tau_i/b_i\), \(R_j=\tau_j/b_j\) are per-thread register-blocking factors. The read-only operands give \(\Sigma_{\mathit{cand}}=\{A,B\}\), whose four binary-based placement schemes change the footprint, traffic, and resident-block bound used in \autoref{sec:model}.
 
 \subsection{GPU Target Profiling}
 \label{sec:gpu-target-profiling}
 
 The target description combines queried hardware constants with effective costs measured once per \gpu architecture and reused across all kernels compiled for the same target. Hardware constants include the number of \sms \(N_{\mathit{SM}}\), warp size \(w\), maximum resident blocks \(B_{\mathit{SM}}\), resident-thread limit \(T_{\mathit{SM}}\), per-\sm shared memory capacity \(S_{\mathit{SM}}\), register-file size \(R_{\mathit{SM}}\), maximum threads per block \(T_{\max}\), and per-block shared memory limit \(S_{\mathit{block}}\). These constants enter the resident-block bound, occupancy calculation, and feasible-domain constraints.
 
-Effective cost constants are obtained through targeted microbenchmarks and reused across kernels. They include global-memory access cost \(L_{\mathit{global}}\), shared memory access cost \(L_{\mathit{smem}}\), register-access cost \(L_{\mathit{reg}}\), effective FMA or compute cost \(L_{\mathit{fma}}\), and synchronization cost \(L_{\mathit{sync}}\). These constants enter the corresponding global, shared, register/private, compute, and synchronization terms in \(T_{\mathit{block}}\). They are used for relative configuration ranking and analytical selection, not for cycle-accurate runtime prediction. This distinction is important: the model is designed to capture the resource interactions that shape the execution-space landscape, while leaving backend scheduling, caching, and pipeline overlap as lower-level effects.
+Effective cost constants are obtained through targeted microbenchmarks and reused across kernels. They include global-memory access cost \(L_{\mathit{global}}\), shared memory access cost \(L_{\mathit{smem}}\), register-access cost \(L_{\mathit{reg}}\), effective FMA (Fused Multiply Add) or compute cost \(L_{\mathit{fma}}\), and synchronization cost \(L_{\mathit{sync}}\). These constants enter the corresponding global, shared, register/private, compute, and synchronization terms in \(T_{\mathit{block}}\). They are used for relative configuration ranking and analytical selection, not for cycle-accurate runtime prediction. This distinction is important: the model is designed to capture the resource interactions that shape the execution space landscape, while leaving backend scheduling, caching, and pipeline overlap as lower-level effects.
 
 In practice, the microbenchmark suite consists of fewer than ten short
 kernels, each measuring one cost constant in isolation, and completes in

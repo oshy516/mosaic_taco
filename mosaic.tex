@@ -112,16 +112,16 @@
 \begin{document}
 
 % \title{\name: Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
-\title[\name: Architecture-Aware GPU Code Generation]
-{\name: Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
+\title[Analytical Optimization of Architecture-Aware GPU Code Generation]
+{Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
 
 
 \begin{abstract}
-\gpus are the dominant execution platform for tensor and affine workloads, yet generating efficient \gpu code requires choosing tile sizes, thread-block shapes, shared memory placement, and register-blocking factors whose interactions form a tight feedback loop among occupancy, shared memory capacity, and register pressure. These execution-space decisions are made \emph{after} a schedule has been fixed, but on \gpus they frequently dominate performance more than the schedule itself. Existing systems navigate this space in one of two ways, and both fall short: search-based tensor compilers generate and time hundreds to thousands of candidate kernels, which is expensive, opaque, and brittle as architectures and shapes diversify, while polyhedral \gpu compilers fix tile sizes and launch configurations by handcrafted rules that are blind to where occupancy, capacity, and wave boundaries actually lie for a given kernel and target.
+Selecting tile sizes, thread block shapes, shared memory placement, and register blocking factors is critical to the performance of compiler-generated GPU code. These decisions are tightly coupled via occupancy, shared memory capacity, register pressure, and memory locality. Existing systems typically rely on handcrafted heuristics or empirical search, making optimization either inaccurate or time-consuming.
 
-This paper presents \name, a unified analytical framework that treats \gpu execution-space optimization as a first-class code-generation problem, separate from transformation scheduling. Operating on transformed programs emitted by existing schedulers, \name jointly models locality, occupancy, register pressure, and compute, memory, and synchronization cost in a single formulation that combines a quantized wave cost and a shared-read-per-FMA ratio \(\phi\) with a conservative register-working-set filter. It solves this formulation as one joint minimization over the Cartesian product of placement schemes and tile/block choices: for every shared memory placement scheme it solves an inner mixed-integer linear program with a light LP tie-break, then returns the lowest-cost tile/block/placement triple overall. Because the model reasons about resources rather than measuring them, \name selects high-performance configurations without generating or timing a single candidate kernel, and it yields a closed-form optimality condition, balanced register blocking, for outer-product contractions.
+This paper presents \name, a unified analytical framework for GPU execution space optimization. Unlike prior approaches that focus primarily on transformation scheduling, \name treats execution space optimization as a first-class code generation problem. Operating on transformed programs produced by existing schedulers, \name jointly models locality, occupancy, register pressure, and compute, memory, and synchronization costs within a single formulation. The model combines a quantized wave cost, a shared-read-per-FMA ratio, and a conservative register-working-set filter to analytically reason about GPU resource utilization. As a result, \name determines tile sizes, thread block dimensions, and shared memory placement without generating and evaluating large numbers of GPU kernels. The resulting formulation further yields a closed-form optimality condition for outer-product contractions, providing architectural insight beyond conventional autotuning.
 
-Across twenty-five PolyBench kernels, deep-learning operators, and end-to-end workloads on three NVIDIA \gpu generations, \name achieves geometric-mean speedups of \(1.21\)--\(1.49\times\) over the PPCG heuristic and \(1.37\)--\(1.89\times\) over the EATSS analytical selector on PolyBench, \(1.88\times\) over PPCG on deep-learning operators, and \(4.22\times\) on end-to-end workloads, while matching or slightly exceeding (\(1.11\times\)) the TVM MetaSchedule autotuner. It reduces selection overhead by \(12\)--\(14\times\) over EATSS and by two to four orders of magnitude over trial-based autotuning, and remains interpretable and compiler-independent.
+We evaluate \name on scientific kernels, deep learning operators, and end-to-end machine learning workloads. \name achieves average speedups of \(1.21\)--\(1.49\times\) over the PPCG heuristic and \(1.37\)--\(1.89\times\) over the EATSS analytical selector on PolyBench kernels, \(1.88\times\) over PPCG on deep learning operators, and \(4.22\times\) on end-to-end workloads. Compared with TVM MetaSchedule, \name achieves slightly better performance (\(1.11\times\)) while eliminating architecture-space search. In addition, \name reduces optimization overhead by \(12\)--\(14\times\) over EATSS and by 2--4 orders of magnitude relative to autotuning, while remaining interpretable, portable, and compiler-independent.
 \end{abstract}
 
 \begin{CCSXML}
@@ -159,6 +159,8 @@ Across twenty-five PolyBench kernels, deep-learning operators, and end-to-end wo
 \input{sec.related}
 \input{sec.conclusion}
 
+\clearpage
+\balance
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 

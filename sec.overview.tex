@@ -2,64 +2,9 @@
 \section{Overview of Mosaic}
 \label{sec:overview}
 
-\name treats the transformed program as the boundary between transformation
-scheduling and execution-space optimization: existing schedulers fix the legal
-computation order, and \name decides how that order should consume GPU
-architectural resources, emitting tile sizes \(\boldsymbol{\tau}\),
-thread-block dimensions \(\mathbf{b}\), and a shared memory placement scheme
-\(S\). Throughout, \name operates outside the compiler; the backend is driven
-as a black box and all resource reasoning happens in \name. As summarized in
-\autoref{fig:mosaic-pipeline}, the workflow comprises four components:
+\name treats the transformed program as the boundary between transformation scheduling and execution space optimization: existing schedulers fix the legal computation order, and \name decides how that order should consume GPU architectural resources, emitting tile sizes \(\boldsymbol{\tau}\), thread-block dimensions \(\mathbf{b}\), and a shared memory placement scheme \(S\). Throughout, \name operates outside the compiler; the backend is driven as a black box and all resource reasoning happens in \name. As summarized in \autoref{fig:mosaic-pipeline}, the workflow comprises four components:
 
-\begin{itemize}
-  \item Transformed-program acquisition. \name starts from a program
-  whose schedule is already determined by an external compiler. Its loop
-  transformations, including fusion, interchange, skewing, distribution, and
-  related restructurings, are reflected in the schedule metadata and are neither
-  re-derived nor overridden; \name reads schedule-tree annotations for PPCG and
-  schedule traces for TVM.
-  \item Metadata extraction and target profiling. \name extracts metadata for
-  loops, accesses, operations, coalescing, and placement candidates, then
-  combines it with once-per-architecture target limits and effective costs,
-  yielding the finite execution-space problem instantiated in \autoref{sec:model}.
-  \item Analytical execution-space solving. \name enumerates
-  shared memory placement schemes for read-only operands and, for each scheme,
-  solves over tile sizes and thread-block dimensions; feasibility is checked by
-  hardware limits and the conservative register filter, and ranking uses the
-  quantized wave cost with an LP tie-break among equal wave costs.
-  \item Backend emission. The selected tile sizes, block sizes, and
-  placement choices are emitted as backend parameters or CUDA macros.
-\end{itemize}
-
-We cast the workflow as a joint minimization over the execution-space candidate
-set:
-\begin{equation}
-(\boldsymbol{\tau}^{*}, \mathbf{b}^{*}, S^{*})
- = \arg\min_{\substack{S \in \Sigma \\
-(\boldsymbol{\tau}, \mathbf{b}) \in \mathcal{V}(S)}}
-  T_{\mathit{total}}(\boldsymbol{\tau}, \mathbf{b}; S).
-\label{eq:two-level}
-\end{equation}
-Here \(S\) ranges over the power set
-\(\Sigma = 2^{\Sigma_{\mathit{cand}}}\) of read-only placement candidates and
-\((\boldsymbol{\tau}, \mathbf{b})\) ranges over the placement-dependent feasible
-domain \(\mathcal{V}(S)\). \autoref{eq:two-level} is a \emph{single} joint
-minimization over the Cartesian product of placements and tile/block choices:
-\name solves the inner problem to obtain the best
-\((\boldsymbol{\tau}, \mathbf{b})\) cost for \emph{every} placement
-\(S \in \Sigma\) and returns the lowest-cost triple overall.
-\autoref{sec:metadata} describes the metadata and target profile that
-instantiate \autoref{eq:two-level}; \autoref{sec:model} formalizes the cost
-model, constraints, and solver.
-
-For the running GEMM example, \name extracts
-\(\mathcal{P} = \{i, j\}\), \(\mathcal{R} = \{k\}\), read-only operands \(A\),
-\(B\), and register accumulator \(C\), enumerates the induced placement schemes,
-solves for tile and block choices, and emits the selected parameters as CUDA
-macros.
-
-
-\begin{figure*}[tbp]
+\begin{figure*}[htbp]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
@@ -207,34 +152,30 @@ macros.
 \draw[arr] (out.south) -- (gen.north);
 
 \end{tikzpicture}}
-\caption{Workflow of \textsc{Mosaic}. An external compiler or scheduler supplies
-schedule metadata, while the target profile supplies architecture limits and
-effective costs. \textsc{Mosaic} classifies dimensions, enumerates placements,
-constructs candidates, filters feasibility, models cost, and performs MILP+LP
-selection. The backend consumes the selected tile sizes, block dimensions, and
-memory-placement directives to emit GPU code; no candidate kernel is generated
-or timed during selection.}
+\caption{Workflow of \name. An external compiler or scheduler supplies schedule metadata, while the target profile supplies architecture limits and effective costs. \name classifies dimensions, enumerates placements, constructs candidates, filters feasibility, models cost, and performs MILP+LP selection. The backend consumes the outputs to emit GPU code.}
 \Description{Compact workflow diagram separating compiler inputs, the Mosaic
 analytical engine, and backend code emission.}
 \label{fig:mosaic-pipeline}
 \end{figure*}
 
-\name is realized as a backend-agnostic Python pipeline that consumes schedule
-information, runs the analytical selection of \autoref{sec:model} outside the
-compiler, and returns the chosen configuration as code-generation parameters.
-It treats the schedule as an abstraction layer rather than reaching into
-compiler internals: from it \name extracts the loop flags, affine access maps,
-tile footprints, read/write polarities, and operation counts required by the
-model, from which the program-derived quantities \(\dim(A)\),
-\(K_{\mathit{total}}\), tile footprints, and stencil halo widths \(h_d\) follow
-directly. The same engine drives both backends and reads identical fields from
-each: PPCG exposes this information through schedule trees, and TVM through
-schedule traces. For every placement scheme it assembles the Stage-1 MILP and
-Stage-2 LP of \autoref{eq:two-level}, solved with PuLP and the CBC backend, and
-keeps the lowest-cost scheme. The selected tiles, block dimensions, and staged
-operands are emitted as backend configuration parameters, including shared memory
-buffers with cooperative loads and barriers for PPCG, schedule parameters for
-TVM, while capacity parameters come from device properties and the effective
-\(L\)/\(c\) constants from the microbenchmarks of
-\autoref{sec:gpu-target-profiling}. Because all resource reasoning happens
-outside the backend, no candidate kernel is generated or timed during selection.
+\begin{itemize}
+  \item \textbf{Transformed-program acquisition}. \name starts from a program whose schedule is already determined by an external compiler. Its loop transformations are reflected in the schedule metadata and are neither re-derived nor overridden. \name reads schedule tree annotations for PPCG and schedule traces for TVM.
+  \item \textbf{Metadata extraction and target profiling}. \name extracts metadata for loops, accesses, operations, coalescing, and placement candidates, then combines it with once-per-architecture target limits and effective costs, yielding the finite execution space problem instantiated in \autoref{sec:model}.
+  \item \textbf{Analytical execution space solving}. \name enumerates shared memory placement schemes for read-only operands and, for each scheme, solves over tile sizes and thread block dimensions; feasibility is checked by hardware limits and the conservative register filter, and ranking uses the quantized wave cost with an LP tie-break among equal wave costs.
+  \item \textbf{Backend emission}. The selected tile sizes, block sizes, and placement choices are emitted as backend parameters or CUDA macros.
+\end{itemize}
+
+We cast the workflow as a joint minimization over the execution space candidate
+set:
+\begin{equation}
+(\boldsymbol{\tau}^{*}, \mathbf{b}^{*}, S^{*})
+ = \arg\min_{\substack{S \in \Sigma \\
+(\boldsymbol{\tau}, \mathbf{b}) \in \mathcal{V}(S)}}
+  T_{\mathit{total}}(\boldsymbol{\tau}, \mathbf{b}; S).
+\label{eq:two-level}
+\end{equation}
+Here \(S\) ranges over the power set \(\Sigma = 2^{\Sigma_{\mathit{cand}}}\) of read-only placement candidates and \((\boldsymbol{\tau}, \mathbf{b})\) ranges over the placement-dependent feasible domain \(\mathcal{V}(S)\). The base of the power expression is two because the placement is a binary choice. \autoref{eq:two-level} is thus a single joint minimization over the Cartesian product of placements and tile/block choices: \name solves the inner problem to obtain the best \((\boldsymbol{\tau}, \mathbf{b})\) cost for every placement \(S \in \Sigma\) and returns the lowest-cost triple overall. %\autoref{sec:metadata} describes the metadata and target profile that instantiate \autoref{eq:two-level}; \autoref{sec:model} formalizes the cost model, constraints, and solver.
+
+For the running GEMM example, \name extracts \(\mathcal{P} = \{i, j\}\), \(\mathcal{R} = \{k\}\), read-only operands \(A\), \(B\), and register accumulator \(C\), enumerates the induced placement schemes, solves for tile and block choices, and emits the selected parameters as CUDA macros.
+
+\name is realized as a backend-agnostic Python pipeline that consumes schedule information, runs the analytical selection of \autoref{sec:model} outside the compiler, and returns the chosen configuration as code generation parameters. It treats the schedule as an abstraction layer rather than reaching into compiler internals: from it \name extracts the loop flags, affine access maps, tile footprints, read/write polarities, and operation counts required by the model, from which the program-derived quantities \(\dim(A)\), \(K_{\mathit{total}}\), tile footprints, and stencil halo widths \(h_d\) follow directly. The same engine drives both backends and reads identical fields from each: PPCG exposes this information through schedule trees, and TVM through schedule traces. For every placement scheme it assembles the Stage-1 MILP and Stage-2 LP of \autoref{eq:two-level}, solved with PuLP~\cite{pulp} and the CBC backend, and keeps the lowest-cost scheme. The selected tiles, block dimensions, and staged operands are emitted as backend configuration parameters, including shared memory buffers with cooperative loads and barriers for PPCG, schedule parameters for TVM, while capacity parameters come from device properties and the effective constants from the microbenchmarks of \autoref{sec:gpu-target-profiling}. %As all resource reasoning happens outside the backend, no candidate kernel is generated or evaluated during selection.
