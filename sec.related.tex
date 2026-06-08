@@ -2,39 +2,17 @@
 \section{Related Work}
 \label{sec:related}
 
-GPU execution-space selection is dominated by fixed heuristics and empirical
-search, while analytical decoupled selection has been developed mostly for CPUs.
-\name carries that lineage to GPUs by modeling the feedback loop of
-\autoref{sec:bg-challenges} directly.
+Existing approaches on optimizing loop nests and tensor programs can be broadly divided into \emph{schedule optimization} and \emph{execution space optimization}. While modern frameworks have extensively studied schedule optimization through polyhedral scheduling~\cite{ppcg,tc,polygeist,akg} and schedule-template search~\cite{halide,tvm}, execution space optimization remains dominated by heuristics and empirical tuning.
 
-Polyhedral GPU code generation derives transformations and emits accelerator
-code.
-PPCG~\cite{ppcg} is the de-facto polyhedral GPU back-end, but fixes tile sizes
-and launches by heuristic rules; later mapping work such as hybrid
-hexagonal/classical tiling for stencils~\cite{hybridtile} still leaves these
-parameters to policy. \name performs no scheduling: it consumes the transformed
-program and optimizes only the execution-space decisions.
+\paragraph{Analytical optimization.}
+Analytical tile size selection has a long history on CPUs~\cite{mckinley-tss,lam-tss,pingali-tss,tss-revisited}. More recent approaches formulate tile size selection using polynomial~\cite{pluto-tss} or geometric programming~\cite{rajopadhye-gp,rajopadhye-igp}, often within compiler frameworks such as Pluto~\cite{pluto}, PPCG~\cite{ppcg}, and PolyMage~\cite{polymage}. TileMind~\cite{tilemind} further decouples tile size selection from compiler internals through an MILP formulation. These methods primarily target CPU cache residency and focus on tile size selection alone.
 
-Tile-size selection began with CPU cache models~\cite{mckinley-tss,lam-tss};
-later systems embed polynomial or geometric
-programming in compilers~\cite{pluto-tss,pluto,rajopadhye-gp,rajopadhye-igp}.
-TileMind~\cite{tilemind} decouples the selector as a MILP over compile-time
-metadata and profiled CPU costs. These systems rely on separable residency:
-footprint \(\le\) capacity. On GPUs, a tile also changes shared memory
-footprint, register working set, occupancy, and wave count. \name therefore
-replaces CPU residency with quantized wave cost and a conservative register
-filter.
+GPU execution space optimization is more challenging because tile sizes interact with thread block configurations, shared memory allocation, occupancy, and register pressure. A recent work~\cite{ppcg-tss} incorporates tile size selection in PPCG into its scheduling formulation, while EATSS~\cite{eatss} analytically models GPU tiling decisions. \name jointly optimizes tile sizes, block dimensions, shared memory placement, and register usage within a unified formulation, remaining independent of any particular compiler infrastructure.
 
-Among analytical models for GPUs, EATSS~\cite{eatss} is an analytical GPU
-tile-size selector embedded in PPCG, but is compiler-coupled and narrower.
-Kernel-specific GPU models cover GEMM and
-convolution~\cite{li-gemm,blis,saday-conv}; \name instead spans reductions,
-contractions, and stencils through \(\phi\) and explicitly models
-occupancy--register coupling and wave quantization.
+\paragraph{Kernel-specific models.}
+Several analytical models have been developed for specific GPU kernels such as GEMM and convolution~\cite{li-gemm,blis,saday-conv,conv-cache}. These approaches achieve high accuracy for their target kernels but are difficult to generalize. \name instead targets a broader class of affine kernels, including contractions, reductions, and stencil computations.
 
-Search-based autotuning systems such as TVM, Ansor, and
-MetaSchedule~\cite{tvm,ansor,metaschedule}
-generate and time configurations, achieving high performance at substantial
-tuning cost. Hybrid and learning-based approaches prune or approximate this
-search~\cite{shirako-tss,hctuner,yuki-tss}, often under restricted tile spaces.
-\name instead derives interpretable configurations analytically.
+\paragraph{Search-based optimization.}
+Modern systems increasingly rely on empirical search. Autotuners such as Ansor~\cite{ansor} and MetaSchedule~\cite{metaschedule}, and related systems for Halide~\cite{automatichalide} and Triton~\cite{triton} generate and evaluate many candidate configurations. Learning-based and dynamic-programming approaches further approximate this optimization space using predictive models or recursive search~\cite{hctuner,yuki-tss,Jangda2020dp,shirako-tss}. These techniques can be viewed as alternative ways of exploring the same execution space optimization problem.
+
+Rather than searching over configurations, \name directly models GPU resource interactions and solves for execution parameters analytically. We therefore compare against both analytical methods (PPCG and EATSS) and the state-of-the-art search-based system MetaSchedule in \autoref{sec:eval}.
