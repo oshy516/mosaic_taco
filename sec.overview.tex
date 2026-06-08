@@ -1,0 +1,240 @@
+% !TEX root =  mosaic.tex
+\section{Overview of Mosaic}
+\label{sec:overview}
+
+\name treats the transformed program as the boundary between transformation
+scheduling and execution-space optimization: existing schedulers fix the legal
+computation order, and \name decides how that order should consume GPU
+architectural resources, emitting tile sizes \(\boldsymbol{\tau}\),
+thread-block dimensions \(\mathbf{b}\), and a shared memory placement scheme
+\(S\). Throughout, \name operates outside the compiler; the backend is driven
+as a black box and all resource reasoning happens in \name. As summarized in
+\autoref{fig:mosaic-pipeline}, the workflow comprises four components:
+
+\begin{itemize}
+  \item Transformed-program acquisition. \name starts from a program
+  whose schedule is already determined by an external compiler. Its loop
+  transformations, including fusion, interchange, skewing, distribution, and
+  related restructurings, are reflected in the schedule metadata and are neither
+  re-derived nor overridden; \name reads schedule-tree annotations for PPCG and
+  schedule traces for TVM.
+  \item Metadata extraction and target profiling. \name extracts metadata for
+  loops, accesses, operations, coalescing, and placement candidates, then
+  combines it with once-per-architecture target limits and effective costs,
+  yielding the finite execution-space problem instantiated in \autoref{sec:model}.
+  \item Analytical execution-space solving. \name enumerates
+  shared memory placement schemes for read-only operands and, for each scheme,
+  solves over tile sizes and thread-block dimensions; feasibility is checked by
+  hardware limits and the conservative register filter, and ranking uses the
+  quantized wave cost with an LP tie-break among equal wave costs.
+  \item Backend emission. The selected tile sizes, block sizes, and
+  placement choices are emitted as backend parameters or CUDA macros.
+\end{itemize}
+
+We cast the workflow as a joint minimization over the execution-space candidate
+set:
+\begin{equation}
+(\boldsymbol{\tau}^{*}, \mathbf{b}^{*}, S^{*})
+ = \arg\min_{\substack{S \in \Sigma \\
+(\boldsymbol{\tau}, \mathbf{b}) \in \mathcal{V}(S)}}
+  T_{\mathit{total}}(\boldsymbol{\tau}, \mathbf{b}; S).
+\label{eq:two-level}
+\end{equation}
+Here \(S\) ranges over the power set
+\(\Sigma = 2^{\Sigma_{\mathit{cand}}}\) of read-only placement candidates and
+\((\boldsymbol{\tau}, \mathbf{b})\) ranges over the placement-dependent feasible
+domain \(\mathcal{V}(S)\). \autoref{eq:two-level} is a \emph{single} joint
+minimization over the Cartesian product of placements and tile/block choices:
+\name solves the inner problem to obtain the best
+\((\boldsymbol{\tau}, \mathbf{b})\) cost for \emph{every} placement
+\(S \in \Sigma\) and returns the lowest-cost triple overall.
+\autoref{sec:metadata} describes the metadata and target profile that
+instantiate \autoref{eq:two-level}; \autoref{sec:model} formalizes the cost
+model, constraints, and solver.
+
+For the running GEMM example, \name extracts
+\(\mathcal{P} = \{i, j\}\), \(\mathcal{R} = \{k\}\), read-only operands \(A\),
+\(B\), and register accumulator \(C\), enumerates the induced placement schemes,
+solves for tile and block choices, and emits the selected parameters as CUDA
+macros.
+
+
+\begin{figure*}[tbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\scriptsize,
+  >={Stealth[length=2mm]},
+  box/.style   ={rectangle, rounded corners=2pt, draw=black!70,
+                 align=left, inner sep=2.8pt, minimum height=7mm},
+  input/.style ={box, fill=blue!5, text width=34mm},
+  target/.style={box, fill=green!6, text width=34mm},
+  stage/.style ={box, fill=orange!8, align=center, text width=20mm,
+                 minimum height=9mm},
+  output/.style={box, fill=purple!6, text width=31mm},
+  title/.style ={font=\scriptsize\bfseries, align=center},
+  arr/.style   ={->, thick, draw=black!75},
+  darr/.style  ={->, thick, dashed, draw=black!55},
+  dline/.style ={thick, dashed, draw=black!55},
+]
+
+\node[input] (sched) {%
+\textbf{Schedule metadata}\\
+\textit{Loop structure}\\
+\quad loop variables and extents\\
+\quad schedule bands\\
+\quad tileable axes\\[1pt]
+\textit{Data layout}\\
+\quad array roles\\
+\quad access layouts};
+
+\node[target, below=3mm of sched] (prof) {%
+\textbf{Target profile}\\
+\textit{Hardware limits}\\
+\quad registers, shared memory\\
+\quad blocks, threads, SM count\\[1pt]
+\textit{Effective costs}\\
+\quad global/shared/register\\
+\quad access costs\\
+\quad synchronization and compute};
+
+\begin{scope}[on background layer]
+  \node[fit=(sched)(prof), inner sep=0pt] (inputgroup) {};
+\end{scope}
+
+\node[title, anchor=south]
+      (inputtitle)
+      at ([yshift=1.2mm]inputgroup.north)
+      {External compiler / target inputs};
+
+\node[stage, anchor=west]
+      (cls)
+      at ([xshift=7mm,yshift=7mm]inputgroup.east)
+      {Dimension\\classification};
+
+\node[stage, right=3mm of cls]
+      (plc)
+      {Placement\\schemes \(\Sigma\)};
+
+\node[stage, right=3mm of plc]
+      (cand)
+      {Tile/block\\candidate sets};
+
+\node[stage, below=5mm of cls]
+      (feas)
+      {Feasible domain\\\(\mathcal{V}(S)\)};
+
+\node[stage, right=3mm of feas]
+      (cost)
+      {Cost model\\\(\phi,T_{\mathit{block}}\)};
+
+\node[stage, right=3mm of cost]
+      (solve)
+      {MILP + LP\\selection};
+
+\begin{scope}[on background layer]
+  \node[
+    draw=black!55,
+    rounded corners=3pt,
+    fill=orange!3,
+    inner xsep=4mm,
+    inner ysep=4mm,
+    fit=(cls)(plc)(cand)(feas)(cost)(solve)
+  ] (engine) {};
+\end{scope}
+
+\node[title, anchor=south]
+      at ([yshift=1.2mm]engine.north)
+      {\textsc{Mosaic} analytical engine
+       \quad (for each \(S\in\Sigma\))};
+
+\draw[arr] (cls.east) -- (plc.west);
+\draw[arr] (plc.east) -- (cand.west);
+
+\draw[arr, rounded corners=1.5pt]
+  (cand.south) -- ++(0,-2mm) -| (feas.north);
+
+\draw[arr] (feas.east) -- (cost.west);
+\draw[arr] (cost.east) -- (solve.west);
+
+\coordinate (schedexit) at (sched.east |- cls.west);
+\draw[arr] (schedexit) -- (cls.west);
+
+\coordinate (profileleft)
+  at ([yshift=-2.5mm]engine.south west);
+
+\coordinate (profilefeas)
+  at (feas.south |- profileleft);
+
+\coordinate (profilecost)
+  at (cost.south |- profileleft);
+
+\coordinate (profexit)
+  at (prof.east |- profileleft);
+
+\draw[dline] (profexit) -- (profilecost);
+\draw[darr] (profilefeas) -- (feas.south);
+\draw[darr] (profilecost) -- (cost.south);
+
+\matrix (backendboxes) [
+  matrix,
+  anchor=west,
+  row sep=3mm,
+  inner sep=0pt
+] at ([xshift=7mm]engine.east |- inputgroup.center) {
+
+  \node[output] (out) {%
+    \textbf{Selected execution space}\\
+    placement \(S^{*}\)\\
+    tile sizes \(\boldsymbol{\tau}^{*}\)\\
+    block sizes \(\mathbf{b}^{*}\)\\
+    register factors \(\mathbf{R}^{*}\)}; \\
+
+  \node[output] (gen) {%
+    \textbf{Backend emission}\\
+    CUDA macros or schedule parameters\\
+    memory-placement directives\\
+    generated GPU kernel}; \\
+};
+
+\node[title, anchor=center]
+      at (backendboxes.north |- inputtitle.center)
+      {Backend compiler};
+
+\draw[arr, rounded corners=1.5pt]
+  (solve.east) -- ++(5mm,0) |- (out.west);
+
+\draw[arr] (out.south) -- (gen.north);
+
+\end{tikzpicture}}
+\caption{Workflow of \textsc{Mosaic}. An external compiler or scheduler supplies
+schedule metadata, while the target profile supplies architecture limits and
+effective costs. \textsc{Mosaic} classifies dimensions, enumerates placements,
+constructs candidates, filters feasibility, models cost, and performs MILP+LP
+selection. The backend consumes the selected tile sizes, block dimensions, and
+memory-placement directives to emit GPU code; no candidate kernel is generated
+or timed during selection.}
+\Description{Compact workflow diagram separating compiler inputs, the Mosaic
+analytical engine, and backend code emission.}
+\label{fig:mosaic-pipeline}
+\end{figure*}
+
+\name is realized as a backend-agnostic Python pipeline that consumes schedule
+information, runs the analytical selection of \autoref{sec:model} outside the
+compiler, and returns the chosen configuration as code-generation parameters.
+It treats the schedule as an abstraction layer rather than reaching into
+compiler internals: from it \name extracts the loop flags, affine access maps,
+tile footprints, read/write polarities, and operation counts required by the
+model, from which the program-derived quantities \(\dim(A)\),
+\(K_{\mathit{total}}\), tile footprints, and stencil halo widths \(h_d\) follow
+directly. The same engine drives both backends and reads identical fields from
+each: PPCG exposes this information through schedule trees, and TVM through
+schedule traces. For every placement scheme it assembles the Stage-1 MILP and
+Stage-2 LP of \autoref{eq:two-level}, solved with PuLP and the CBC backend, and
+keeps the lowest-cost scheme. The selected tiles, block dimensions, and staged
+operands are emitted as backend configuration parameters, including shared memory
+buffers with cooperative loads and barriers for PPCG, schedule parameters for
+TVM, while capacity parameters come from device properties and the effective
+\(L\)/\(c\) constants from the microbenchmarks of
+\autoref{sec:gpu-target-profiling}. Because all resource reasoning happens
+outside the backend, no candidate kernel is generated or timed during selection.

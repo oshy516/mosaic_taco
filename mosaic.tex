@@ -1,0 +1,169 @@
+%%
+%% Mosaic paper repository main file.
+%%
+\documentclass[sigplan,10pt,review,anonymous,screen]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
+
+\setcopyright{acmlicensed}
+\copyrightyear{2027}
+\acmYear{2027}
+\acmDOI{XXXXXXX.XXXXXXX}
+\acmConference[CGO '27]{IEEE/ACM International Symposium on Code Generation and Optimization}{March 2027}{Salt Lake City, Utah, USA}
+\acmBooktitle{Proceedings of the IEEE/ACM International Symposium on Code Generation and Optimization (CGO '27),
+ March 2027, Salt Lake City, Utah, USA}
+\acmISBN{978-1-4503-XXXX-X/2027/03}
+
+% User-defined packages.
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{adjustbox}
+\usepgfplotslibrary{statistics, groupplots}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, positioning, calc, matrix, backgrounds}
+\definecolor{primaryblue}{RGB}{70,130,180}
+\definecolor{accentorange}{RGB}{255,140,0}
+\definecolor{deepgreen}{RGB}{34,139,34}
+\definecolor{deepskyblue}{RGB}{46,84,161}
+\definecolor{mypurple}{RGB}{112, 48, 160}
+\definecolor{lightblue}{RGB}{173, 216, 230}
+\definecolor{lightpurple}{RGB}{221, 160, 221}
+\definecolor{lightpink}{RGB}{255, 182, 193}
+\definecolor{color1}{RGB}{199,56,73}
+\definecolor{color2}{RGB}{248,189,211}
+\definecolor{color3}{RGB}{191,170,210}
+\definecolor{color4}{RGB}{147,197,235}
+\definecolor{color5}{RGB}{157,159,163}
+\usepackage[utf8]{inputenc}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{wrapfig}
+\usepackage{listings}
+\definecolor{darkgray}{rgb}{.3,.3,.3}
+\definecolor{darkred}{rgb}{.6,0,0}
+\definecolor{darkgreen}{rgb}{0,.6,0}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{patterncode}{
+  language=Python,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{black},
+  commentstyle=\itshape\color{gray!65},
+  stringstyle=\color{black},
+  showstringspaces=false,
+  breaklines=false,
+  frame=single,
+  framerule=0.4pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  aboveskip=2pt,
+  belowskip=0pt,
+  escapeinside={(*@}{@*)},
+  morekeywords={zeros,conv,split,cat,sigmoid,tanh},
+}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+
+\def\sectionautorefname{\S}
+\def\subsectionautorefname{\S}
+\def\subsubsectionautorefname{\S}
+\def\equationautorefname{Eq.}
+\def\figureautorefname{Fig.}
+\def\tableautorefname{Tab.}
+\def\algorithmautorefname{Alg.}
+\newcommand{\definitionautorefname}{Def.}
+\newcommand{\name}{{Mosaic}\xspace}
+\newcommand{\gpu}{GPU\xspace}
+\newcommand{\gpus}{GPUs\xspace}
+\newcommand{\sm}{SM\xspace}
+\newcommand{\sms}{SMs\xspace}
+\newcommand{\circled}[1]{\textup{\scriptsize(#1)}}
+\newcommand{\tile}{tile\xspace}
+\newcommand{\tiles}{tiles\xspace}
+\newcommand{\placement}{\textsc{Placement}\xspace}
+\newcommand{\Solve}{\textsc{Solve}}
+\newcommand{\Rsm}{R_{\mathrm{SM}}}
+\newcommand{\Ssm}{S_{\mathrm{SM}}}
+\newcommand{\Sblock}{S_{\mathrm{block}}}
+\newcommand{\Bsm}{B_{\mathrm{SM}}}
+\newcommand{\Tsm}{T_{\mathrm{SM}}}
+\newcommand{\Nsm}{N_{\mathrm{SM}}}
+\newcommand{\Tmax}{T_{\max}}
+\newcommand{\Lglobal}{L_{\mathrm{global}}}
+\newcommand{\Lsmem}{L_{\mathrm{smem}}}
+\newcommand{\Lreg}{L_{\mathrm{reg}}}
+\newcommand{\Lfma}{L_{\mathrm{fma}}}
+\newcommand{\Lsync}{L_{\mathrm{sync}}}
+\newcommand{\Sigmacand}{\Sigma_{\mathrm{cand}}}
+\begin{document}
+
+% \title{\name: Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
+\title[\name: Architecture-Aware GPU Code Generation]
+{\name: Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
+
+
+\begin{abstract}
+\gpus are the dominant execution platform for tensor and affine workloads, yet generating efficient \gpu code requires choosing tile sizes, thread-block shapes, shared memory placement, and register-blocking factors whose interactions form a tight feedback loop among occupancy, shared memory capacity, and register pressure. These execution-space decisions are made \emph{after} a schedule has been fixed, but on \gpus they frequently dominate performance more than the schedule itself. Existing systems navigate this space in one of two ways, and both fall short: search-based tensor compilers generate and time hundreds to thousands of candidate kernels, which is expensive, opaque, and brittle as architectures and shapes diversify, while polyhedral \gpu compilers fix tile sizes and launch configurations by handcrafted rules that are blind to where occupancy, capacity, and wave boundaries actually lie for a given kernel and target.
+
+This paper presents \name, a unified analytical framework that treats \gpu execution-space optimization as a first-class code-generation problem, separate from transformation scheduling. Operating on transformed programs emitted by existing schedulers, \name jointly models locality, occupancy, register pressure, and compute, memory, and synchronization cost in a single formulation that combines a quantized wave cost and a shared-read-per-FMA ratio \(\phi\) with a conservative register-working-set filter. It solves this formulation as one joint minimization over the Cartesian product of placement schemes and tile/block choices: for every shared memory placement scheme it solves an inner mixed-integer linear program with a light LP tie-break, then returns the lowest-cost tile/block/placement triple overall. Because the model reasons about resources rather than measuring them, \name selects high-performance configurations without generating or timing a single candidate kernel, and it yields a closed-form optimality condition, balanced register blocking, for outer-product contractions.
+
+Across twenty-five PolyBench kernels, deep-learning operators, and end-to-end workloads on three NVIDIA \gpu generations, \name achieves geometric-mean speedups of \(1.21\)--\(1.49\times\) over the PPCG heuristic and \(1.37\)--\(1.89\times\) over the EATSS analytical selector on PolyBench, \(1.88\times\) over PPCG on deep-learning operators, and \(4.22\times\) on end-to-end workloads, while matching or slightly exceeding (\(1.11\times\)) the TVM MetaSchedule autotuner. It reduces selection overhead by \(12\)--\(14\times\) over EATSS and by two to four orders of magnitude over trial-based autotuning, and remains interpretable and compiler-independent.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10010520.10010521.10010528</concept_id>
+       <concept_desc>Computer systems organization~Parallel architectures</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10011007.10011006.10011008</concept_id>
+       <concept_desc>Software and its engineering~General programming languages</concept_desc>
+       <concept_significance>300</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10002950.10003624.10003625.10003630</concept_id>
+       <concept_desc>Mathematics of computing~Combinatorial optimization</concept_desc>
+       <concept_significance>300</concept_significance>
+       </concept>
+ </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computer systems organization~Parallel architectures}
+\ccsdesc[300]{Software and its engineering~General programming languages}
+\ccsdesc[300]{Mathematics of computing~Combinatorial optimization}
+
+\maketitle
+
+\input{sec.intro}
+\input{sec.background}
+\input{sec.overview}
+\input{sec.metadata}
+\input{sec.model}
+\input{sec.eval}
+\input{sec.related}
+\input{sec.conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+% \appendix
+% \input{sec.apdx}
+
+\end{document}
+\endinput

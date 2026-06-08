@@ -1,0 +1,40 @@
+% !TEX root =  mosaic.tex
+\section{Related Work}
+\label{sec:related}
+
+GPU execution-space selection is dominated by fixed heuristics and empirical
+search, while analytical decoupled selection has been developed mostly for CPUs.
+\name carries that lineage to GPUs by modeling the feedback loop of
+\autoref{sec:bg-challenges} directly.
+
+Polyhedral GPU code generation derives transformations and emits accelerator
+code.
+PPCG~\cite{ppcg} is the de-facto polyhedral GPU back-end, but fixes tile sizes
+and launches by heuristic rules; later mapping work such as hybrid
+hexagonal/classical tiling for stencils~\cite{hybridtile} still leaves these
+parameters to policy. \name performs no scheduling: it consumes the transformed
+program and optimizes only the execution-space decisions.
+
+Tile-size selection began with CPU cache models~\cite{mckinley-tss,lam-tss};
+later systems embed polynomial or geometric
+programming in compilers~\cite{pluto-tss,pluto,rajopadhye-gp,rajopadhye-igp}.
+TileMind~\cite{tilemind} decouples the selector as a MILP over compile-time
+metadata and profiled CPU costs. These systems rely on separable residency:
+footprint \(\le\) capacity. On GPUs, a tile also changes shared memory
+footprint, register working set, occupancy, and wave count. \name therefore
+replaces CPU residency with quantized wave cost and a conservative register
+filter.
+
+Among analytical models for GPUs, EATSS~\cite{eatss} is an analytical GPU
+tile-size selector embedded in PPCG, but is compiler-coupled and narrower.
+Kernel-specific GPU models cover GEMM and
+convolution~\cite{li-gemm,blis,saday-conv}; \name instead spans reductions,
+contractions, and stencils through \(\phi\) and explicitly models
+occupancy--register coupling and wave quantization.
+
+Search-based autotuning systems such as TVM, Ansor, and
+MetaSchedule~\cite{tvm,ansor,metaschedule}
+generate and time configurations, achieving high performance at substantial
+tuning cost. Hybrid and learning-based approaches prune or approximate this
+search~\cite{shirako-tss,hctuner,yuki-tss}, often under restricted tile spaces.
+\name instead derives interpretable configurations analytically.
