@@ -9,7 +9,7 @@ We evaluate \name across three generations of NVIDIA GPUs whose hardware and sof
   \caption{Experimental platforms used in the evaluation.}
   \label{tab:platforms}
   \scriptsize
-  \setlength{\tabcolsep}{3pt}
+  %\setlength{\tabcolsep}{3pt}
   \begin{tabular}{lccccc}
     \toprule
     GPU & Arch. & Memory & OS & CUDA & Compiler \\
@@ -21,7 +21,7 @@ We evaluate \name across three generations of NVIDIA GPUs whose hardware and sof
   \end{tabular}
 \end{table}
 
-\name consumes schedule metadata from PPCG0.09\cite{ppcg-rep} for affine kernels and TVM0.22.dev0\cite{tvm-rep} for tensor operators and workloads. We compare against PPCG's heuristic and its state-of-the-art EATSS analytical selector~\cite{eatss}, and the TVM MetaSchedule autotuner~\cite{metaschedule}. To isolate execution space selection, \name consumes the input each baseline uses, a PPCG schedule tree for the affine kernels and a TVM schedule trace for the tensor operators, and changes only tile sizes, block dimensions, and shared memory placement.
+\name consumes schedule metadata from PPCG0.09~\cite{ppcg-rep} for affine kernels and TVM0.22.dev0~\cite{tvm-rep} for tensor operators and workloads. We compare against PPCG's heuristic and its state-of-the-art EATSS analytical selector~\cite{eatss}, and the TVM MetaSchedule autotuner~\cite{metaschedule}. To isolate execution space selection, \name consumes the input each baseline uses, a PPCG schedule tree for the affine kernels and a TVM schedule trace for the tensor operators, and changes only tile sizes, block dimensions, and shared memory placement.
 
 \subsection{Performance on PolyBench Kernels}
 \label{subsec:polybench}
@@ -88,7 +88,7 @@ We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanni
 \subsection{Performance on Deep Learning Operators}
 \label{subsec:operators}
 
-We next evaluate \name on five deep learning operators. CNN, LSTM, and RNN come from the PolyNN suite~\cite{polynn}; FNN and Embedding are extracted from the AlexNet~\cite{alexnet} and BERT~\cite{bert} workloads, respectively. \autoref{fig:network-operators} reports the speedup of \name over PPCG. \name delivers large gains on CNN (\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of \(1.88\times\).
+We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from the PolyNN suite~\cite{polynn}, and FNN and Embedding extracted from the AlexNet~\cite{alexnet} and BERT~\cite{bert}, respectively. \autoref{fig:network-operators} reports the speedup. \name delivers large gains on CNN (\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of \(1.88\times\).
 
 \begin{figure}[htbp]
 \centering
@@ -177,7 +177,7 @@ We next evaluate \name on five deep learning operators. CNN, LSTM, and RNN come 
 \end{figure}
 
 
-These operators cover execution regimes. CNN and FNN are contraction/GEMM-like and therefore compute-intensive, a regime where the \(\phi\)-ratio of \autoref{sec:cost} most effectively trades locality against register pressure, but FNN is small and regular enough that the PPCG default already lands close to the configuration selected by \name. LSTM, in contrast, is a memory-intensive recurrent operator; its performance is dominated more by data movement than by arithmetic intensity, leaving less room for the register-blocking trade-offs captured by the \(\phi\) ratio (\autoref{sec:cost}). Embedding is also data-movement dominated, but its default PPCG mapping leaves substantial opportunity for \name's placement and occupancy model to improve the execution configuration.
+These operators cover execution regimes. CNN and FNN are contraction/GEMM-like and therefore compute-intensive, a regime where the \(\phi\) ratio of \autoref{sec:cost} most effectively trades locality against register pressure, but FNN is small and regular enough that the PPCG default already lands close to the configuration selected by \name. LSTM, in contrast, is a memory-intensive recurrent operator; its performance is dominated more by data movement than by arithmetic intensity, leaving less room for the register-blocking trade-offs captured by the \(\phi\) ratio (\autoref{sec:cost}). Embedding is also data-movement dominated, but its default PPCG mapping leaves substantial opportunity for \name's placement and occupancy model to improve the execution configuration.
 
 To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. The two selection costs differ in nature. \name's overhead is a single compile-time analytical solve: for each placement scheme in \(\Sigma\) it assembles and solves one MILP followed by an LP tie-break (\autoref{sec:solver}), and this cost is incurred once at compile time and does not involve generating or executing any GPU kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a candidate kernel with NVCC and runs it on the target GPU to record latency, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. One closed-form solve replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
 
@@ -499,7 +499,6 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \caption{Execution time and search/solver overhead for six operators, comparing with TVM MetaSchedule. Solid lines show execution time; dashed lines show selection cost.}
 \Description{Six curve plots for CNN, LSTM, RNN, FNN, embedding, and matmul comparing \name and tvm SSSRRSRS execution time and search or solver overhead.}
 \label{fig:network-operator-curves}
-\vspace{-10pt}
 \end{figure}
 
 \autoref{fig:network-operator-curves} includes a sixth operator, Matmul, scheduled from TVM metadata to match the MetaSchedule comparison. TVM exposes \texttt{tvm.relay.nn.matmul} as a first-class operator with native MetaSchedule support, which lets us extend the TVM evaluation to a standalone dense contraction. The PPCG side covers the same dense-contraction case through the GEMM kernel of \autoref{subsec:polybench}, so Matmul is not repeated in \autoref{fig:network-operators}.

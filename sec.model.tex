@@ -57,51 +57,6 @@ Each array is assigned a memory space from its read/write polarity
 \autoref{eq:two-level}. Accumulators and ordinary write-only references are
 excluded, keeping the placement space small.
 
-\begin{table}[htbp]
-  \caption{Model notation.}
-  \label{tab:model-notation}
-  \centering
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{p{0.30\linewidth}p{0.59\linewidth}}
-    \toprule
-    Symbol & Meaning \\
-    \midrule
-    \multicolumn{2}{l}{\textbf{Decision variables}} \\[1pt]
-    \(\tile_d,\ b_d,\ \rblk_d\) & Tile size, thread-block size, and per-thread
-                              register-blocking factor for dimension~\(d\). \\
-    \(\work,\ S \in \Sigma\)   & Per-thread output count; shared memory
-                              placement scheme (subset of \(\Sigma_{\mathit{cand}}\)). \\
-    \midrule
-    \multicolumn{2}{l}{\textbf{Architecture constants}
-      \textit{(queried or profiled once per GPU)}} \\[1pt]
-    \(\Nsm,\Bsm,\Tsm,\Tmax\) &
-      SM count; max resident blocks and threads per SM; max threads per block. \\
-    \(\Ssm,\Sblock,\Rsm\) &
-      Per-SM and per-block shared memory capacity; SM register-file size. \\
-    \(\Lg,\Ls,\Lf,\Ly\) &
-      Effective costs for global access, shared-memory access, FMA,
-      and barrier synchronization. \\
-    \(\Lr,\ \gcoal\) &
-      Register-access cost; coalescing granularity for loads. \\
-    \midrule
-    \multicolumn{2}{l}{\textbf{Key derived quantities}} \\[1pt]
-    \(\phi_{\square}\) &
-      Reads-per-FMA ratio for placement class
-      \(\square\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
-      links register blocking to memory traffic in \(T_{\mathit{compute}}\). \\
-    \(\operatorname{smem}(\tvec;S),\ |A|_{\tvec}\) &
-      Shared-memory footprint and operand tile footprint. \\
-    \(K_{\mathit{outer}}\) &
-      Cooperative load rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\)
-      over tiled reduction dimensions. \\
-    \(bps,\ R_{\mathit{avail}},\ \hat{R}\) &
-      Resident blocks per SM; available registers per thread;
-      conservative register working-set estimate. \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
 Equivalently, the joint execution space candidate set is \(\prod_{d\in\mathcal{P}\cup\mathcal{R}} C_d \times \Sigma\), with each \(\tile_d\in C_d\) paired with divisor choices for admissible block dimensions; \(\mathcal{V}(S)\) then filters this product to legal configurations for the objective of \autoref{eq:two-level}.
 
 Following the placement rules in \autoref{tab:placement-rules}, for a fixed \(S\), let \(\mathcal{A}_{\mathit{smem}}=S\) and \(\mathcal{A}_{\mathit{gmem}}=\Sigma_{\mathit{cand}}\setminus S\). With \(\work=\prod_{d\in\mathcal{P}}\rblk_d\) outputs per thread, the induced resource quantities used by the constraints and cost model are the shared memory footprint \(\operatorname{smem}(\tvec;S)\), the read counts \(R^{\mathit{smem}}_{\mathit{in}}\) and \(R^{\mathit{gmem}}_{\mathit{in}}\), and the register working set \(\hat{R}\). The per-reduction-step read count and its normalized ratio are

@@ -13,6 +13,48 @@ The metadata falls into several groups tied to the model. These groups are chose
 
 The shared memory placement candidates are restricted to read-only references whose tile footprints are functions of the candidate tile sizes; \autoref{tab:placement-rules} assigns every other reference a fixed memory space. This restriction keeps the outer enumeration small while retaining the placements that materially affect reuse, shared memory footprint, and occupancy.
 
+\begin{table}[htbp]
+  \caption{Placement rules.}
+  \label{tab:placement-rules}
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{0pt}
+  \renewcommand{\arraystretch}{1.05}
+
+  \begin{tabularx}{\columnwidth}{
+    @{}
+    >{\raggedright\arraybackslash}X
+    @{}
+  }
+    \toprule
+    \textbf{Array polarity and placement decision} \\
+    \midrule
+
+    \textbf{Read/write accumulators.}\par
+    Place in registers to keep private accumulated outputs
+    close to the thread. \\
+
+    \addlinespace[2.5pt]
+
+    \textbf{Write-only coalesced references.}\par
+    Keep in global memory and stream the output directly. \\
+
+    \addlinespace[2.5pt]
+
+    \textbf{Write-only uncoalesced or transposed references.}\par
+    Use shared memory to restore coalescing before global
+    writeback. \\
+
+    \addlinespace[2.5pt]
+
+    \textbf{Read-only references.}\par
+    Form \(\Sigma_{\mathit{cand}}\); the cost model decides
+    whether staging is profitable. \\
+
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
 \autoref{fig:gemm-schedule-metadata} illustrates metadata construction using the default PPCG schedule of the running GEMM example and the dimension sets defined in \autoref{eq:dimension-roles}. In general, \name requires only the categories above; polyhedral compilers expose them through schedule trees and affine access maps, while TVM-style compilers expose them through schedule traces and tensor access metadata.
 
 % Figure palette
@@ -28,7 +70,7 @@ The shared memory placement candidates are restricted to read-only references wh
 \definecolor{color4}{RGB}{147,197,235}
 \definecolor{color5}{RGB}{157,159,163}
 
-\begin{figure}[t]
+\begin{figure}[htbp]
 \centering
 % \setlength{\abovecaptionskip}{10pt}
 \resizebox{0.96\columnwidth}{!}{%
@@ -314,46 +356,49 @@ In this example, the dimension sets defined in \autoref{eq:dimension-roles} give
 
 The target description combines hardware constants queried from the device with effective costs measured once per architecture and reused across all kernels for that target. The hardware constants, including SM count, warp size, resident block and thread limits, shared memory capacities, register-file size, and block-size limit (\autoref{tab:model-notation}), bound the resident-block count, occupancy, and feasible domain. The effective costs, the \(\Lambda\)-family constants of \autoref{tab:model-notation}, come from targeted microbenchmarks and enter the matching terms of \(T_{\mathit{block}}\). They serve relative ranking and analytical selection, not cycle-accurate prediction; the model captures the resource interactions that shape the execution space landscape and leaves backend scheduling, caching, and pipeline overlap as lower-level effects.
 
-In practice, the microbenchmark suite is fewer than ten short kernels, each measuring one cost constant in isolation, and completes in under two minutes on any of the three GPUs. The profiled constants depend only on the architecture, not on any kernel or problem size, so this one-time cost amortizes across all kernels for that target.
-
-\begin{table}[t]
-  \caption{Placement rules.}
-  \label{tab:placement-rules}
+\begin{table}[htbp]
+  \caption{Model notation.}
+  \label{tab:model-notation}
   \centering
   \scriptsize
-  \setlength{\tabcolsep}{0pt}
-  \renewcommand{\arraystretch}{1.05}
-
-  \begin{tabularx}{\columnwidth}{
-    @{}
-    >{\raggedright\arraybackslash}X
-    @{}
-  }
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{p{0.30\linewidth}p{0.59\linewidth}}
     \toprule
-    \textbf{Array polarity and placement decision} \\
+    Symbol & Meaning \\
     \midrule
-
-    \textbf{Read/write accumulators.}\par
-    Place in registers to keep private accumulated outputs
-    close to the thread. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Write-only coalesced references.}\par
-    Keep in global memory and stream the output directly. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Write-only uncoalesced or transposed references.}\par
-    Use shared memory to restore coalescing before global
-    writeback. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Read-only references.}\par
-    Form \(\Sigma_{\mathit{cand}}\); the cost model decides
-    whether staging is profitable. \\
-
+    \multicolumn{2}{l}{\textbf{Decision variables}} \\[1pt]
+    \(\tile_d,\ b_d,\ \rblk_d\) & Tile size, thread-block size, and per-thread
+                              register-blocking factor for dimension~\(d\). \\
+    \(\work,\ S \in \Sigma\)   & Per-thread output count; shared memory
+                              placement scheme (subset of \(\Sigma_{\mathit{cand}}\)). \\
+    \midrule
+    \multicolumn{2}{l}{\textbf{Architecture constants}
+      \textit{(queried or profiled once per GPU)}} \\[1pt]
+    \(\Nsm,\Bsm,\Tsm,\Tmax\) &
+      SM count; max resident blocks and threads per SM; max threads per block. \\
+    \(\Ssm,\Sblock,\Rsm\) &
+      Per-SM and per-block shared memory capacity; SM register-file size. \\
+    \(\Lg,\Ls,\Lf,\Ly\) &
+      Effective costs for global access, shared-memory access, FMA,
+      and barrier synchronization. \\
+    \(\Lr,\ \gcoal\) &
+      Register-access cost; coalescing granularity for loads. \\
+    \midrule
+    \multicolumn{2}{l}{\textbf{Key derived quantities}} \\[1pt]
+    \(\phi_{\square}\) &
+      Reads-per-FMA ratio for placement class
+      \(\square\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
+      links register blocking to memory traffic in \(T_{\mathit{compute}}\). \\
+    \(\operatorname{smem}(\tvec;S),\ |A|_{\tvec}\) &
+      Shared-memory footprint and operand tile footprint. \\
+    \(K_{\mathit{outer}}\) &
+      Cooperative load rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\)
+      over tiled reduction dimensions. \\
+    \(bps,\ R_{\mathit{avail}},\ \hat{R}\) &
+      Resident blocks per SM; available registers per thread;
+      conservative register working-set estimate. \\
     \bottomrule
-  \end{tabularx}
+  \end{tabular}
 \end{table}
+
+In practice, the microbenchmark suite is fewer than ten short kernels, each measuring one cost constant in isolation, and completes in under two minutes on any of the three GPUs. The profiled constants depend only on the architecture, not on any kernel or problem size, so this one-time cost amortizes across all kernels for that target.

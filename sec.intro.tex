@@ -10,28 +10,17 @@ Prior work addresses this space along two lines, none of which fully solves the 
 
 What is missing is a single analytical framework that \emph{decides tile sizes, block shapes, and shared memory placement together for general affine and tensor kernels, closes the \gpu-specific feedback loop rather than assuming separable residency, and does so independently of any compiler}. Building it is not a matter of porting a CPU cost model, because the execution space unknowns are coupled: the per-thread register budget depends on the resident-block count, which itself depends on register usage; staging an operand in shared memory cuts global traffic but consumes capacity and can lower the resident-block count; an SM hosts an integer number of blocks, so the grid runs in a discrete number of waves whose boundaries move with tile and placement choices; and the exact register count is fixed by the backend allocator only after code generation.
 
-Our key insight is that this coupling can be captured by two compact quantities whose interaction is what makes the landscape irregular: a \emph{quantized wave cost}, a per-block cost multiplied by an integer wave count, which reproduces the step-function discontinuities that smooth objectives miss, and a \emph{shared-read-per-FMA ratio}, which normalizes operand reads by the arithmetic they serve and exposes register blocking as the lever trading locality against register pressure. Around these, a conservative register-working-set filter rejects only configurations whose register lower bound already exceeds the budget, breaking the occupancy--register cycle by reasoning rather than measurement. We realize this insight in \name, which operates on the transformed programs emitted by existing schedulers~\cite{ppcg,tvm} and jointly determines tile sizes, thread-block dimensions, and a shared memory placement scheme by enumerating placements over an inner MILP with an LP tie-break, recovering balanced register blocking for outer-product contractions as an analytical outcome rather than an imposed rule.
+Our key insight is that this coupling can be captured by two compact quantities whose interaction is what makes the landscape irregular: a \emph{quantized wave cost}, a per-block cost multiplied by an integer wave count, which reproduces the step-function discontinuities that smooth objectives miss, and a \emph{shared-read-per-FMA ratio}, which normalizes operand reads by the arithmetic they serve and exposes register blocking as the lever trading locality against register pressure. Around these, a conservative register-working-set filter rejects only configurations whose register lower bound already exceeds the budget, breaking the occupancy--register cycle by reasoning rather than measurement.
+
+We realize this insight in \name, which operates on the transformed programs emitted by existing schedulers~\cite{ppcg,tvm} and jointly determines tile sizes, thread-block dimensions, and a shared memory placement scheme by enumerating placements over an inner mixed integer linear program (MILP) with an linear programming (LP) tie-break, recovering balanced register blocking for outer-product contractions as an analytical outcome rather than an imposed rule.
 
 This positions \name apart from all three prior lines: unlike heuristic polyhedral compilers~\cite{ppcg}, it does not fix launches by kernel-blind rules; unlike kernel-specific \gpu models~\cite{li-gemm,saday-conv,blis}, it spans reductions, contractions, and stencils; unlike prior GPU-oriented analytical approaches~\cite{pluto-tss,eatss}, it models placement, register feasibility, and wave quantization jointly and is compiler-independent; and unlike autotuners~\cite{ansor,metaschedule}, it derives interpretable configurations once, with no per-shape or per-target tuning loop. The evaluation in \autoref{sec:eval} confirms that this analytical reasoning replaces a substantial portion of \gpu execution-space autotuning.
 
-In summary, this paper makes the following contributions:
-\begingroup
-\setlength{\topsep}{2pt plus 1pt minus 1pt}
-\setlength{\partopsep}{0pt}
-\setlength{\itemsep}{1pt plus 0.5pt minus 0.5pt}
-\setlength{\parsep}{0pt}
-\begin{itemize}[
-  leftmargin=1.4em,
-  labelsep=0.45em,
-  topsep=2pt plus 1pt minus 1pt,
-  partopsep=0pt,
-  itemsep=1pt plus 0.5pt minus 0.5pt,
-  parsep=0pt
-]
+In summary, this work makes the following contributions:
+\begin{itemize}
   \item We identify \gpu execution space optimization as a code generation problem, complementary to but fundamentally different from transformation scheduling.
   \item We propose \name, a unified analytical model that jointly optimizes tile sizes, thread block dimensions, shared memory placement, occupancy, and register pressure, closing the coupled feedback loop inside one solvable
   formulation and recovering balanced register blocking as a closed-form optimum for outer-product contractions.
   \item We design a compiler-independent framework that operates on transformed programs and integrates with polyhedral schedulers, template-based code generators, and autotuning systems.
   \item We evaluate \name on scientific kernels, deep learning operators, and end-to-end workloads across three \gpu generations, showing consistent gains over heuristics, analytical models, and state-of-the-art autotuners without architectural search.
 \end{itemize}
-\endgroup
