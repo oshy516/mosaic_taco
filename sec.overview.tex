@@ -1,5 +1,5 @@
 % !TEX root =  mosaic.tex
-\section{Overview of Mosaic}
+\section{Overview of \name}
 \label{sec:overview}
 
 \name treats the transformed program as the boundary between transformation scheduling and execution space optimization: existing schedulers fix the legal computation order, and \name decides how that order should consume GPU architectural resources, emitting tile sizes \(\tvec\), thread-block dimensions \(\mathbf{b}\), and a shared memory placement scheme \(S\). Throughout, \name operates outside the compiler; the backend is driven as a black box and all resource reasoning happens in \name. As summarized in \autoref{fig:mosaic-pipeline}, the workflow comprises four components:
@@ -122,7 +122,7 @@
 \end{scope}
 
 % ------------------------------------------------------------------
-% Mosaic analytical engine
+% \name analytical engine
 % ------------------------------------------------------------------
 \node[stage, anchor=west]
   (cls)
@@ -235,7 +235,7 @@
   text=color1!78!black
 ]
   at (engine.center |- titleline)
-  {\textsc{Mosaic} analytical engine
+  {\textsc{\name} analytical engine
    \quad (for each \(S\in\Sigma\))};
 
 \node[
@@ -312,7 +312,7 @@ invokes the backend's existing lowering and GPU code generation.
 
 \Description{
 Compact workflow diagram with side-by-side target-profile and schedule
-inputs, a two-row Mosaic analytical engine, and a compiler-specific
+inputs, a two-row \name analytical engine, and a compiler-specific
 backend that consumes the selected placement, tile, and block parameters.
 }
 

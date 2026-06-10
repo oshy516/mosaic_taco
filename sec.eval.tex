@@ -39,9 +39,9 @@ We evaluate \name across three generations of NVIDIA GPUs whose hardware and sof
 \toprule
 \multirow{3}{*}{Benchmark} & \multicolumn{5}{c}{RTX 4090} & \multicolumn{5}{c}{A100} & \multicolumn{5}{c}{V100} \\
 \cmidrule(lr){2-6} \cmidrule(lr){7-11} \cmidrule(lr){12-16}
-& \multicolumn{2}{c}{Mosaic} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS}
-& \multicolumn{2}{c}{Mosaic} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS}
-& \multicolumn{2}{c}{Mosaic} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS} \\
+& \multicolumn{2}{c}{\name} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS}
+& \multicolumn{2}{c}{\name} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS}
+& \multicolumn{2}{c}{\name} & \multicolumn{1}{c}{PPCG} & \multicolumn{2}{c}{EATSS} \\
 \cmidrule(lr){2-3} \cmidrule(lr){4-4} \cmidrule(lr){5-6}
 \cmidrule(lr){7-8} \cmidrule(lr){9-9} \cmidrule(lr){10-11}
 \cmidrule(lr){12-13} \cmidrule(lr){14-14} \cmidrule(lr){15-16}
@@ -131,7 +131,7 @@ We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from 
 \addplot[fill=color4, draw=black] coordinates {
     (CNN,5.734)[] (LSTM,1.015)[] (RNN,1.035)[] (FNN,1.002)[] (Embed,3.853)[]
 };
-\legend{PPCG, Mosaic}
+\legend{PPCG, \name}
 
 \nextgroupplot[
     height=0.34\columnwidth,
