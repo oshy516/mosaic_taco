@@ -6,7 +6,7 @@
 
 Transformation scheduling has been extensively explored in these systems, but efficient \gpu code generation hinges on a second, largely underexplored class of decisions. Once a schedule is fixed, the compiler must still choose architecture-specific execution parameters: tile sizes, thread block configurations, thread-to-iteration mappings, shared memory placement, and register blocking. These parameters decide how the transformed computation is mapped onto hardware, and on \gpus they frequently dominate performance more than the schedule itself. The two classes are fundamentally different: loop transformations reshape the iteration space and fix the order in which computations execute, whereas execution space optimizations leave that order intact and instead determine how the computation consumes shared memory, registers, caches, and streaming multiprocessors (SMs). Treating the second as an afterthought of the first, by bolting on a heuristic tile size or sweeping launch configurations after the schedule is emitted, misses the structure that makes the \gpu execution space hard.
 
-Prior work addresses this space along two lines, none of which fully solves the \gpu problem. Analytical tile size selection originated on CPUs, choosing tiles so that a footprint stays resident in cache~\cite{mckinley-tss,lam-tss} and later embedding this reasoning in polyhedral~\cite{pluto-tss}, geometric programming~\cite{rajopadhye-gp,rajopadhye-igp}, and decoupled formulations~\cite{tilemind}; their common assumption is separable residency, footprint \(\le\) capacity, which breaks on \gpus since one tile simultaneously changes shared memory footprint, register working set, resident-block count, occupancy, and wave count. \gpu-specific analytical models are either hand-derived for a single kernel class like matrix multiplication, convolution, or BLAS~\cite{li-gemm,saday-conv,blis}, or embedded inside specific compilers~\cite{ppcg-tss}. Empirical search and related autotuners~\cite{metaschedule,ansor,automatichalide} together with learning-based pruning~\cite{hctuner,shirako-tss,yuki-tss}, finds good regions but offers little architectural explanation, pays tuning cost for every new target or shape.
+Prior work addresses this space along two lines, none of which fully solves the \gpu problem. Analytical tile size selection originated on CPUs, choosing tiles so that a footprint stays resident in cache~\cite{mckinley-tss,lam-tss} and later embedding this reasoning in polyhedral~\cite{pluto-tss}, geometric programming~\cite{rajopadhye-gp,rajopadhye-igp}, and decoupled formulations~\cite{tilemind}; their common assumption is separable residency, where the footprint must fit within a capacity bound, which breaks on \gpus since one tile simultaneously changes shared memory footprint, register working set, resident-block count, occupancy, and wave count. \gpu-specific analytical models are either hand-derived for a single kernel class like matrix multiplication, convolution, or BLAS~\cite{li-gemm,saday-conv,blis}, or embedded inside specific compilers~\cite{ppcg-tss}. Empirical search and related autotuners~\cite{metaschedule,ansor,automatichalide} together with learning-based pruning~\cite{hctuner,shirako-tss,yuki-tss}, find good regions but offer little architectural explanation, pay tuning costs for every new target or shape.
 
 What is missing is a single analytical framework that \emph{decides tile sizes, block shapes, and shared memory placement together for general affine and tensor kernels, closes the \gpu-specific feedback loop rather than assuming separable residency, and does so independently of any compiler}. Building it is not a matter of porting a CPU cost model, because the execution space unknowns are coupled: the per-thread register budget depends on the resident-block count, which itself depends on register usage; staging an operand in shared memory cuts global traffic but consumes capacity and can lower the resident-block count; an SM hosts an integer number of blocks, so the grid runs in a discrete number of waves whose boundaries move with tile and placement choices; and the exact register count is fixed by the backend allocator only after code generation.
 
@@ -15,10 +15,23 @@ Our key insight is that this coupling can be captured by two compact quantities 
 This positions \name apart from all three prior lines: unlike heuristic polyhedral compilers~\cite{ppcg}, it does not fix launches by kernel-blind rules; unlike kernel-specific \gpu models~\cite{li-gemm,saday-conv,blis}, it spans reductions, contractions, and stencils; unlike prior GPU-oriented analytical approaches~\cite{pluto-tss,eatss}, it models placement, register feasibility, and wave quantization jointly and is compiler-independent; and unlike autotuners~\cite{ansor,metaschedule}, it derives interpretable configurations once, with no per-shape or per-target tuning loop. The evaluation in \autoref{sec:eval} confirms that this analytical reasoning replaces a substantial portion of \gpu execution-space autotuning.
 
 In summary, this paper makes the following contributions:
-\begin{itemize}
+\begingroup
+\setlength{\topsep}{2pt plus 1pt minus 1pt}
+\setlength{\partopsep}{0pt}
+\setlength{\itemsep}{1pt plus 0.5pt minus 0.5pt}
+\setlength{\parsep}{0pt}
+\begin{itemize}[
+  leftmargin=1.4em,
+  labelsep=0.45em,
+  topsep=2pt plus 1pt minus 1pt,
+  partopsep=0pt,
+  itemsep=1pt plus 0.5pt minus 0.5pt,
+  parsep=0pt
+]
   \item We identify \gpu execution space optimization as a code generation problem, complementary to but fundamentally different from transformation scheduling.
   \item We propose \name, a unified analytical model that jointly optimizes tile sizes, thread block dimensions, shared memory placement, occupancy, and register pressure, closing the coupled feedback loop inside one solvable
   formulation and recovering balanced register blocking as a closed-form optimum for outer-product contractions.
   \item We design a compiler-independent framework that operates on transformed programs and integrates with polyhedral schedulers, template-based code generators, and autotuning systems.
   \item We evaluate \name on scientific kernels, deep learning operators, and end-to-end workloads across three \gpu generations, showing consistent gains over heuristics, analytical models, and state-of-the-art autotuners without architectural search.
 \end{itemize}
+\endgroup
