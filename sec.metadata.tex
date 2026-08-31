@@ -2,57 +2,45 @@
 \section{Metadata Extraction and GPU Profiling}
 \label{sec:metadata}
 
-This section explains how \name converts a transformed program and a target \gpu into the constants required by \autoref{eq:two-level}. \name instantiates its analytical model from two sources: compile-time metadata extracted from the transformed program and target-specific constants obtained once per \gpu architecture. The first source describes the computation and its transformed loop structure; the second describes the resource limits and effective costs of the target. Together, they determine the candidate variables, resource footprints, feasibility constraints, and cost terms used by the solver.
+\name instantiates its analytical model from two sources: compile-time metadata extracted from the transformed program and target-specific constants obtained once per \gpu architecture. The first source describes the computation and its transformed loop structure; the second describes the resource limits and effective costs of the target. Together, they determine the candidate variables, resource footprints, feasibility constraints, and cost terms used by the solver.
 
 \subsection{Compile-Time Metadata}
 \label{sec:compile-time-metadata}
 
-The transformed representation exposes the loop order and mapping decisions the scheduler already made, so \name optimizes execution space parameters without redoing them.
+The transformed representation exposes the loop order and mapping decisions the upstream compiler already made, so \name selects only execution-space parameters exposed by that fixed schedule without redoing either decision.
 
-The metadata falls into several groups tied to the model. These groups are chosen to capture the information the cost model requires: loop structure drives candidate generation, array metadata drives traffic and placement decisions, statement metadata drives compute and synchronization cost, and GPU-specific mapping metadata closes the occupancy and register loop. Loop structure records dimension names, bounds, schedule order, and step sizes; with \(N_d\) the extent of dimension \(d\), these define the tile and block candidate sets. Dimension annotations record permutable and coincident (i.e., parallelizable) dimensions, from which \name classifies each loop as parallel (\(\mathcal{P}\), mappable to independent blocks/threads), reduction (\(\mathcal{R}\), absent from every write footprint), or serial (\(\mathcal{D}\), neither of the former); the formal definition is \autoref{eq:dimension-roles} in \autoref{sec:abstraction}. Array metadata records affine accesses, read/write polarity, layout, coalescing direction, and tile footprints, determining memory traffic, shared memory capacity, accumulator placement, and staging candidates. Statement metadata records arithmetic counts, memory-reference counts, and synchronization sites, which instantiate compute and barrier costs. GPU-specific mapping metadata adds block/thread mappings, shared memory staging candidates, register-blocking factors \(\rblk_d=\tile_d/b_d\), and coalescing.
+The metadata falls into several groups tied to the model: loop structure drives candidate generation, array metadata drives traffic and placement-scenario construction, statement metadata drives compute and synchronization cost, and compiler-provided GPU mapping metadata closes the occupancy and register loop. Loop structure records dimension names, bounds, schedule order, and step sizes; with \(N_d\) the extent of dimension \(d\), these define the tile and block candidate sets. Dimension annotations record permutable and coincident (parallelizable) dimensions, from which \name classifies each loop as parallel (\(\mathcal{P}\), already mapped to independent blocks/threads), reduction (\(\mathcal{R}\), absent from every write footprint), or serial (\(\mathcal{D}\), neither of the former; formal definition in \autoref{eq:dimension-roles}). Array metadata records affine accesses, read/write polarity, layout, coalescing direction, and tile footprints, determining traffic, shared-memory capacity, accumulator treatment, and staging candidates; statement metadata records arithmetic counts, memory-reference counts, and synchronization sites, instantiating compute and barrier costs; and GPU mapping metadata records the fixed block/thread mapping, staging candidates, induced register-blocking factors \(\rblk_d=\tile_d/b_d\), and coalescing.
 
-The shared memory placement candidates are restricted to read-only references whose tile footprints are functions of the candidate tile sizes; \autoref{tab:placement-rules} assigns every other reference a fixed memory space. This restriction keeps the outer enumeration small while retaining the placements that materially affect reuse, shared memory footprint, and occupancy.
+The shared-memory placement candidates are restricted to read-only references whose tile footprints are functions of the candidate tile sizes; \autoref{tab:placement-rules} assigns every other reference a fixed abstract memory space. The model treats \(S\) only as an abstract placement scenario: it affects the predicted shared-memory footprint, memory traffic, occupancy constraints, register feasibility, and objective cost. The best modeled scenario informs the selected tile sizes and thread-block dimensions, but PPCG or TVM independently determines concrete shared-memory staging through its existing lowering mechanism; \name does not prescribe or emit staging instructions. This restriction keeps the outer enumeration small while retaining the scenarios that materially affect reuse and resource feasibility.
 
-\begin{table}[htbp]
-  \caption{Placement rules.}
+\begin{table}[tbp]
+  \caption{Memory-placement rules derived from array access polarity.}
   \label{tab:placement-rules}
   \centering
-  \scriptsize
-  \setlength{\tabcolsep}{0pt}
-  \renewcommand{\arraystretch}{1.05}
-
-  \begin{tabularx}{\columnwidth}{
-    @{}
+  \small
+  \setlength{\tabcolsep}{6pt}
+  \renewcommand{\arraystretch}{1.10}
+  \scalebox{0.93}{%
+  \begin{tabularx}{0.94\textwidth}{@{}
+    >{\raggedright\arraybackslash}p{0.30\textwidth}
     >{\raggedright\arraybackslash}X
-    @{}
-  }
+    @{}}
     \toprule
-    \textbf{Array polarity and placement decision} \\
+    \textbf{Array access class} & \textbf{Placement rule} \\
     \midrule
-
-    \textbf{Read/write accumulators.}\par
-    Place in registers to keep private accumulated outputs
-    close to the thread. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Write-only coalesced references.}\par
-    Keep in global memory and stream the output directly. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Write-only uncoalesced or transposed references.}\par
-    Use shared memory to restore coalescing before global
-    writeback. \\
-
-    \addlinespace[2.5pt]
-
-    \textbf{Read-only references.}\par
-    Form \(\Sigma_{\mathit{cand}}\); the cost model decides
-    whether staging is profitable. \\
-
+    Read/write accumulators &
+      Model in registers to keep private accumulated outputs close to the
+      owning thread. \\
+    Write-only coalesced references &
+      Model in global memory and stream the output directly. \\
+    Write-only uncoalesced or transposed references &
+      Model as shared-memory resident for coalesced global writeback. \\
+    Read-only references &
+      Add to \(\Sigma_{\mathit{cand}}\); the cost model evaluates abstract
+      placement scenarios, while backend lowering determines concrete staging. \\
     \bottomrule
   \end{tabularx}
+  }
 \end{table}
 
 \autoref{fig:gemm-schedule-metadata} illustrates metadata construction using the default PPCG schedule of the running GEMM example and the dimension sets defined in \autoref{eq:dimension-roles}. In general, \name requires only the categories above; polyhedral compilers expose them through schedule trees and affine access maps, while TVM-style compilers expose them through schedule traces and tensor access metadata.
@@ -70,10 +58,12 @@ The shared memory placement candidates are restricted to read-only references wh
 \definecolor{color4}{RGB}{147,197,235}
 \definecolor{color5}{RGB}{157,159,163}
 
-\begin{figure}[htbp]
+% The wrap spans the Sec. 4.2 heading, whose vertical skip is not counted as a
+% text line by wrapfig.  Match the post-figure spacing used by Fig. 1.
+\begin{wrapfigure}[22]{r}{0.49\textwidth}
 \centering
 % \setlength{\abovecaptionskip}{10pt}
-\resizebox{0.96\columnwidth}{!}{%
+\resizebox{0.98\linewidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
   box/.style={
@@ -157,8 +147,8 @@ The shared memory placement candidates are restricted to read-only references wh
 ] (mapping_text)
   at ([xshift=0mm,yshift=-1.5mm]bandone_text.south west)
 {%
-  \quad block map: \(i\to b_0,\ j\to b_1\);\quad
-  thread map: \(i\to t_0,\ j\to t_1\)
+  \quad fixed block map: \(i\to b_0,\ j\to b_1\);\quad
+  fixed thread map: \(i\to t_0,\ j\to t_1\)
 };
 
 \node[
@@ -338,6 +328,7 @@ The shared memory placement candidates are restricted to read-only references wh
   one-time hardware profile, yields the \name analytical metadata,
   with the dimension sets following \autoref{eq:dimension-roles}.
 }
+\label{fig:gemm-schedule-metadata}
 
 \Description{
   A compact single-column flow diagram in which a rectangular
@@ -346,34 +337,46 @@ The shared memory placement candidates are restricted to read-only references wh
   \name analytical metadata.
 }
 
-\label{fig:gemm-schedule-metadata}
-\end{figure}
+\end{wrapfigure}
 
-In this example, the dimension sets defined in \autoref{eq:dimension-roles} give \(\mathcal{P}=\{i,j\}\), which creates \(\tile_i,\tile_j\) and \(b_i,b_j\); \(\mathcal{R}=\{k\}\), which creates \(\tile_k\) but no block dimension. The register-blocking factors \(\rblk_i=\tile_i/b_i\) and \(\rblk_j=\tile_j/b_j\) follow from these tile and block choices rather than entering as separate variables. The read-only operands give \(\Sigma_{\mathit{cand}}=\{A,B\}\), whose four binary-based placement schemes change the footprint, traffic, and resident-block bound used in \autoref{sec:model}.
+In this example, the dimension sets defined in \autoref{eq:dimension-roles} give \(\mathcal{P}=\{i,j\}\), which creates \(\tile_i,\tile_j\) and \(b_i,b_j\); \(\mathcal{R}=\{k\}\), which creates \(\tile_k\) but no block dimension. The register-blocking factors \(\rblk_i=\tile_i/b_i\) and \(\rblk_j=\tile_j/b_j\) follow from these tile and block choices rather than entering as separate variables. The read-only operands give \(\Sigma_{\mathit{cand}}=\{A,B\}\), whose four binary-based placement scenarios change the modeled footprint, traffic, and resident-block bound used in \autoref{sec:model}.
 
 \subsection{GPU Target Profiling}
 \label{sec:gpu-target-profiling}
 
 The target description combines hardware constants queried from the device with effective costs measured once per architecture and reused across all kernels for that target. The hardware constants, including SM count, warp size, resident block and thread limits, shared memory capacities, register-file size, and block-size limit (\autoref{tab:model-notation}), bound the resident-block count, occupancy, and feasible domain. The effective costs, the \(\Lambda\)-family constants of \autoref{tab:model-notation}, come from targeted microbenchmarks and enter the matching terms of \(T_{\mathit{block}}\). They serve relative ranking and analytical selection, not cycle-accurate prediction; the model captures the resource interactions that shape the execution space landscape and leaves backend scheduling, caching, and pipeline overlap as lower-level effects.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
   \caption{Model notation.}
   \label{tab:model-notation}
   \centering
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{p{0.30\linewidth}p{0.59\linewidth}}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.08}
+  \scalebox{0.93}{%
+  \begin{tabularx}{0.9\textwidth}{@{}
+    >{\raggedright\arraybackslash}p{0.25\linewidth}
+    >{\raggedright\arraybackslash}X
+    @{}}
     \toprule
-    Symbol & Meaning \\
+    \textbf{Symbol} & \textbf{Meaning} \\
     \midrule
-    \multicolumn{2}{l}{\textbf{Decision variables}} \\[1pt]
-    \(\tile_d,\ b_d,\ \rblk_d\) & Tile size, thread-block size, and per-thread
-                              register-blocking factor for dimension~\(d\). \\
-    \(\work,\ S \in \Sigma\)   & Per-thread output count; shared memory
-                              placement scheme (subset of \(\Sigma_{\mathit{cand}}\)). \\
+    \multicolumn{2}{@{}l@{}}{\textbf{Optimization variables}} \\
+    \addlinespace[1pt]
+    \(\tile_d,\ b_d\) & Tile size and thread-block size for dimension~\(d\). \\
+    \addlinespace[2pt]
     \midrule
-    \multicolumn{2}{l}{\textbf{Architecture constants}
-      \textit{(queried or profiled once per GPU)}} \\[1pt]
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Enumerated modeling state}} \\
+    \addlinespace[1pt]
+    \(S \in \Sigma\) & Abstract shared-memory placement scenario
+                         (subset of \(\Sigma_{\mathit{cand}}\)). \\
+    \addlinespace[2pt]
+    \midrule
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Architecture constants}\quad
+      \textit{(queried or profiled once per GPU)}} \\
+    \addlinespace[1pt]
     \(\Nsm,\Bsm,\Tsm,\Tmax\) &
       SM count; max resident blocks and threads per SM; max threads per block. \\
     \(\Ssm,\Sblock,\Rsm\) &
@@ -383,12 +386,20 @@ The target description combines hardware constants queried from the device with 
       and barrier synchronization. \\
     \(\Lr,\ \gcoal\) &
       Register-access cost; coalescing granularity for loads. \\
+    \addlinespace[2pt]
     \midrule
-    \multicolumn{2}{l}{\textbf{Key derived quantities}} \\[1pt]
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Derived quantities}} \\
+    \addlinespace[1pt]
+    \(\rblk_d,\ \work\) & Register-blocking factor \(\rblk_d=\tile_d/b_d\) and
+                           per-thread output count \(\work=\prod_{d\in\mathcal{P}}\rblk_d\). \\
     \(\phi_{\square}\) &
       Reads-per-FMA ratio for placement class
       \(\square\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
       links register blocking to memory traffic in \(T_{\mathit{compute}}\). \\
+    \(\rho_{\mathrm{reg}},\ \creg\) &
+      Modeled register accesses per reduction-body evaluation;
+      \(\creg=\rho_{\mathrm{reg}}\Lr\). \\
     \(\operatorname{smem}(\tvec;S),\ |A|_{\tvec}\) &
       Shared-memory footprint and operand tile footprint. \\
     \(K_{\mathit{outer}}\) &
@@ -398,7 +409,8 @@ The target description combines hardware constants queried from the device with 
       Resident blocks per SM; available registers per thread;
       conservative register working-set estimate. \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
+  }
 \end{table}
 
-In practice, the microbenchmark suite is fewer than ten short kernels, each measuring one cost constant in isolation, and completes in under two minutes on any of the three GPUs. The profiled constants depend only on the architecture, not on any kernel or problem size, so this one-time cost amortizes across all kernels for that target.
+Each \(\Lambda\)-family constant of \autoref{tab:model-notation} is obtained from a dedicated CUDA microbenchmark: a pointer-chasing dependency chain larger than L2 for \(\Lg\), the corresponding shared-memory chain for \(\Ls\), dependent instruction chains for \(\Lr\) and \(\Lf\), and a barrier-only kernel for \(\Ly\). The resulting architecture-specific profile is generated once per GPU and reused across kernels and problem sizes.

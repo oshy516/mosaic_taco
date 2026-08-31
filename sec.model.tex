@@ -2,9 +2,9 @@
 \section{Analytical Modeling and Problem Solving}
 \label{sec:model}
 
-Given transformed metadata and target constants, \name selects tile sizes \(\tvec\), thread block dimensions \(\mathbf{b}\), and placement scheme \(S\), inducing register-blocking factors \(\rblk_d=\tile_d/b_d\), footprints, resident blocks, waves, and register working sets; \autoref{tab:model-notation} summarizes the main notation. Recall from \autoref{eq:two-level} that the joint minimization over \(S\) and \((\tvec,\mathbf{b})\) factorizes into an outer placement enumeration and, for each fixed \(S\), an inner minimization. The inner objective is the quantized wave cost.
+Given transformed metadata and target constants, \name selects tile sizes \(\tvec\) and thread-block dimensions \(\mathbf{b}\) while reasoning over abstract shared-memory placement scenarios \(S\) and accounting for occupancy and register pressure, inducing register-blocking factors \(\rblk_d=\tile_d/b_d\), footprints, resident blocks, waves, and register working sets; \autoref{tab:model-notation} summarizes the main notation. Recall from \autoref{eq:two-level} that the analytical comparison over \(S\) and \((\tvec,\mathbf{b})\) factorizes into outer placement-scenario enumeration and, for each fixed \(S\), an inner two-stage analytical selection. The primary inner objective is the quantized wave cost.
 \begin{equation}
-\min_{\tvec,\mathbf{b},S}
+\min_{(\tvec,\mathbf{b})\in\mathcal{V}(S)}
 T_{\mathit{block}}(\tvec,\mathbf{b};S)
 \cdot
 \left\lceil
@@ -13,13 +13,13 @@ T_{\mathit{block}}(\tvec,\mathbf{b};S)
 \right\rceil,
 \label{eq:model-summary}
 \end{equation}
-Here \(bps\) is the resident blocks per \sm (\autoref{eq:resident-blocks}) and \(T_{\mathit{block}}\) is the per-block cost (\autoref{eq:block-cost}); \autoref{eq:model-summary} is thus the inner form of \autoref{eq:two-level}, and the outer loop selects the placement with the lowest inner optimum. The objective is subject to thread/block limits, minimum useful parallelism, shared-memory capacity, and register feasibility (\autoref{eq:feasible-domain}).
+For a fixed modeled placement scenario \(S\), \autoref{eq:model-summary} minimizes over tile sizes and thread-block dimensions only. Here \(bps\) is the resident blocks per \sm (\autoref{eq:resident-blocks}) and \(T_{\mathit{block}}\) is the per-block cost (\autoref{eq:block-cost}); the ceiling is the scenario-dependent wave count. Thus, \autoref{eq:model-summary} is the primary objective of the per-scenario analytical selection in \autoref{eq:two-level}; the outer enumeration compares the primary scores first and uses the secondary score only to resolve ties. The feasible domain \(\mathcal{V}(S)\) enforces thread/block limits, minimum useful parallelism, shared-memory capacity, and register feasibility (\autoref{eq:feasible-domain}).
 
 \subsection{Candidate Space}
 \label{sec:abstraction}
 \label{sec:placement}
 
-From the metadata of \autoref{sec:metadata}, each loop dimension is labeled according to its role in the transformed schedule. Parallel dimensions are those that can be legally mapped to independent thread blocks and threads; reduction dimensions are those absent from all write footprints, meaning their iterations produce partial results that must be accumulated; serial dimensions are those that are neither parallel nor reduction and must execute sequentially within each thread. Formally:
+From the metadata of \autoref{sec:metadata}, each loop dimension is labeled according to its role in the transformed schedule. Parallel dimensions are those the upstream compiler has determined can legally execute across independent thread blocks and threads; reduction dimensions are those absent from all write footprints, meaning their iterations produce partial results that must be accumulated; serial dimensions are those that are neither parallel nor reduction and must execute sequentially within each thread. Formally:
 \begin{equation}
 \begin{aligned}
 \mathcal{P}
@@ -34,7 +34,7 @@ From the metadata of \autoref{sec:metadata}, each loop dimension is labeled acco
 \end{equation}
 \(\mathit{parallelizable}[d]=1\) denotes a dimension that can legally execute in parallel; for polyhedral schedules this includes coincident dimensions with no carried dependence, and TVM axes bound to CUDA block or thread indices are treated analogously. Reduction axes populate \(\mathcal{R}\), and serial dimensions remain untiled. Serial dimensions \(\mathcal{D}\) are those belonging to neither \(\mathcal{P}\) nor \(\mathcal{R}\); they remain at their full loop extents, are not assigned tile or block variables, and do not contribute to the candidate generation of \autoref{eq:tile-candidates}. For GEMM, \(\mathcal{D}=\emptyset\).
 
-Parallel dimensions map to thread and block indices, while reduction dimensions contribute only to per-output work \(K_{\mathit{total}}\). The reduction work per output element is a compile-time constant independent of any tile choice:
+Under the compiler-provided mapping, parallel dimensions correspond to thread and block indices, while reduction dimensions contribute only to per-output work \(K_{\mathit{total}}\). The reduction work per output element is a compile-time constant independent of any tile choice:
 \begin{equation}
 K_{\mathit{total}} = \prod_{r \in \mathcal{R}} N_r.
 \label{eq:reduction-work}
@@ -47,7 +47,7 @@ C_d
   \cup \{v \mid v \text{ divides } N_d\}.
 \label{eq:tile-candidates}
 \end{equation}
-Powers of two align tiles with the warp size and coalescing granularity, while exact divisors of \(N_d\) eliminate boundary-remainder loops and partial waves; arbitrary tile sizes are excluded since they neither improve coalescing nor divide the extent evenly, yet would enlarge the candidate space combinatorially. For each \(\tile_d\in C_d\), block candidates are restricted to divisors of \(\tile_d\), keeping
+\name uses powers of two and exact divisors to keep the analytical candidate space bounded. Powers of two provide hardware-aligned choices, while exact divisors avoid boundary remainders. We do not assume that other tile sizes are inherently inferior; \autoref{subsec:bounded-ppcg-sweep} evaluates a broader empirical space including unaligned and non-divisor configurations to quantify the performance opportunity outside this analytical candidate set. For each \(\tile_d\in C_d\), block candidates are restricted to divisors of \(\tile_d\), keeping
 \(\rblk_d=\tile_d/b_d\) integral; hardware limits are imposed later.
 
 Each array is assigned a memory space from its read/write polarity
@@ -55,27 +55,24 @@ Each array is assigned a memory space from its read/write polarity
 \(\Sigma_{\mathit{cand}}\), and \name enumerates
 \(\Sigma=2^{\Sigma_{\mathit{cand}}}\) during solving of
 \autoref{eq:two-level}. Accumulators and ordinary write-only references are
-excluded, keeping the placement space small.
+excluded, keeping the placement-scenario space small.
 
-Equivalently, the joint execution space candidate set is \(\prod_{d\in\mathcal{P}\cup\mathcal{R}} C_d \times \Sigma\), with each \(\tile_d\in C_d\) paired with divisor choices for admissible block dimensions; \(\mathcal{V}(S)\) then filters this product to legal configurations for the objective of \autoref{eq:two-level}.
+Equivalently, the joint execution-space candidate set is \(\prod_{d\in\mathcal{P}\cup\mathcal{R}} C_d \times \Sigma\), with each \(\tile_d\in C_d\) paired with divisor choices for admissible block dimensions; \(\mathcal{V}(S)\) then filters this product to legal configurations for the objective of \autoref{eq:two-level}. This candidate space contains tile sizes, thread-block dimensions under the compiler-provided mapping, and abstract modeled placement scenarios; it contains no schedule, mapping structure, or execution-order variables.
 
 Following the placement rules in \autoref{tab:placement-rules}, for a fixed \(S\), let \(\mathcal{A}_{\mathit{smem}}=S\) and \(\mathcal{A}_{\mathit{gmem}}=\Sigma_{\mathit{cand}}\setminus S\). With \(\work=\prod_{d\in\mathcal{P}}\rblk_d\) outputs per thread, the induced resource quantities used by the constraints and cost model are the shared memory footprint \(\operatorname{smem}(\tvec;S)\), the read counts \(R^{\mathit{smem}}_{\mathit{in}}\) and \(R^{\mathit{gmem}}_{\mathit{in}}\), and the register working set \(\hat{R}\). The per-reduction-step read count and its normalized ratio are
-\begingroup
-\small
 \begin{equation}
 \begin{aligned}
 R^{\square}_{\mathit{in}}
-&= \sum_{A \in \mathcal{A}_{\square}}
-   \prod_{d \in \dim(A) \cap \mathcal{P}} \rblk_d,\\
+&=\sum_{A \in \mathcal{A}_{\square}}
+  \prod_{d \in \dim(A) \cap \mathcal{P}} \rblk_d,\\[0.6ex]
 \phi_{\square}
-&= \dfrac{R^{\square}_{\mathit{in}}}{\work}
- = \sum_{A \in \mathcal{A}_{\square}}
-   \prod_{d \in \mathcal{P} \setminus \dim(A)} \rblk_d^{-1},
-   \qquad \square \in \{\mathit{smem},\mathit{gmem}\}.
+&=\dfrac{R^{\square}_{\mathit{in}}}{\work}
+ =\sum_{A \in \mathcal{A}_{\square}}
+  \prod_{d \in \mathcal{P} \setminus \dim(A)} \rblk_d^{-1},
+\qquad \square \in \{\mathit{smem},\mathit{gmem}\}.
 \end{aligned}
 \label{eq:read-ratios}
 \end{equation}
-\endgroup
 
 For the GEMM example with both operands staged (\(\mathcal{P}=\{i,j\}\), \(\mathcal{R}=\{k\}\), \(\Sigma_{\mathit{cand}}=\{A,B\}\); \autoref{fig:gemm-schedule-metadata}), \autoref{eq:read-ratios} gives \(\work=\rblk_i\rblk_j\) outputs per thread and \(\phi_{\mathit{smem}}=\rblk_i^{-1}+\rblk_j^{-1}\).
 
@@ -83,7 +80,7 @@ For the GEMM example with both operands staged (\(\mathcal{P}=\{i,j\}\), \(\math
 \label{sec:constraints}
 \label{sec:register-filter}
 
-The inner feasible domain \(\mathcal{V}(S)\) is the set of tile/block choices that, for a fixed placement \(S\), satisfy every launch and resource constraint; it is the domain over which the inner objective (\autoref{eq:model-summary}) is minimized, after which the outer loop compares the optima across placements (\autoref{eq:two-level}). It collects launch limits and pruning rules:
+The inner feasible domain \(\mathcal{V}(S)\) is the set of tile/block choices that, for a fixed modeled placement scenario \(S\), satisfy every launch and resource constraint; it is the domain over which the inner objective (\autoref{eq:model-summary}) is minimized, after which the outer loop compares the optima across modeled scenarios (\autoref{eq:two-level}). It collects launch limits and pruning rules:
 \begin{equation}
 \begin{gathered}
 \mathcal{V}(S)
@@ -91,8 +88,7 @@ The inner feasible domain \(\mathcal{V}(S)\) is the set of tile/block choices th
 \begin{array}{@{}l@{\qquad}l@{}}
 \text{C1: } \displaystyle \prod_{d\in\mathcal{P}} b_d \le \Tmax
 &
-\text{C2: } \displaystyle \prod_{d\in\mathcal{P}} b_d \ge \Wwarp
-\\[2.8ex]
+\text{C2: } \displaystyle \prod_{d\in\mathcal{P}} b_d \ge \Wwarp\\[0.7ex]
 \text{C3: } \operatorname{smem}(\tvec;S)\le \Sblock
 &
 \text{C4: } \hat{R}\le R_{\mathit{avail}}.
@@ -106,7 +102,7 @@ The register filter breaks the occupancy and register circular dependence by ord
 \begingroup
 \renewcommand{\arraystretch}{1.12}
 \begin{equation}
-\begin{array}{@{}l@{\;}l@{}}
+\begin{aligned}
 bps
 &= \min\left(
    \Bsm,
@@ -114,23 +110,24 @@ bps
    \left\lfloor
    \dfrac{\Ssm}{\operatorname{smem}(\tvec;S)}
    \right\rfloor
-   \right),\\[2.5ex]
+   \right),
+&\qquad
 R_{\mathit{avail}}
 &= \left\lfloor
    \dfrac{\Rsm}{bps \cdot \prod_{d\in\mathcal{P}} b_d}
-   \right\rfloor,\\[2.5ex]
+   \right\rfloor,\\[1.5ex]
 \hat{R}
 &= \work + R^{\mathit{live}}_{\mathit{in}} + \Czero,
 \qquad
 R^{\mathit{live}}_{\mathit{in}}
 = R^{\mathit{smem}}_{\mathit{in}} + R^{\mathit{gmem}}_{\mathit{in}}.
-\end{array}
+\end{aligned}
 \label{eq:resident-blocks}
 \end{equation}
 \endgroup
-When \(\operatorname{smem}(\tvec;S)=0\), the shared memory ceiling in \(bps\) is omitted. The offset \(\Czero\) counts the control and addressing registers that stay live throughout the kernel, namely the reduction loop counters and the shared and global base pointers. Its value is fixed once the loop nest and placement are known and does not vary with the tile or block choice, so the solver treats it as a constant. \(\hat{R}\) is a conservative register lower bound since the counted values are live together. Thus \(\hat{R}>R_{\mathit{avail}}\) rejects the candidate, while passing the filter only means the lower bound does not prove infeasibility. This one-sided guarantee is deliberate: a false rejection only drops a candidate and never emits a spilling kernel, whereas a false acceptance, with its register count known only after backend compilation, can emit one that spills.
+When \(\operatorname{smem}(\tvec;S)=0\), the shared memory ceiling in \(bps\) is omitted. The offset \(\Czero\) counts the control and addressing registers that stay live throughout the kernel, namely the reduction loop counters and the shared and global base pointers. Its value is fixed once the loop nest and modeled placement scenario are known and does not vary with the tile or block choice, so the solver treats it as a constant. \(\hat R\) is a conservative register lower bound because the counted values are simultaneously live. Thus, \(\hat R > R_{\rm avail}\) is sufficient to reject a configuration, whereas \(\hat R \le R_{\rm avail}\) only means that register infeasibility has not been established. C4 is therefore a one-sided pruning test rather than a predictor of backend allocation: violating the bound means that the modeled working-set lower bound already exceeds the register budget implied by the current residency estimate, while satisfying C4 does not guarantee spill-free backend allocation. \autoref{sec:eval} validates this distinction against post-compilation register behavior.
 
-For the GEMM feasibility example with placement \(S=\{A,B\}\), tile sizes
+For the GEMM feasibility example with modeled scenario \(S=\{A,B\}\), tile sizes
 \(\tile_i,\tile_j,\tile_k\), and
 block dimensions \(b_i,b_j\), C1 requires \(b_i b_j\le \Tmax\) and C2
 requires \(b_i b_j\ge \Wwarp\). C3 requires the shared memory footprint
@@ -167,19 +164,19 @@ Since \(bps\) depends on the shared memory footprint, C4 couples tile, block, an
 \label{sec:outer-product-optimality}
 \label{sec:kernel-specialization}
 
-With feasibility fixed, \name ranks the surviving configurations by modeled time. For one placement and configuration, the time is the per-block cost scaled by the number of residency waves:
+With feasibility fixed, \name ranks the surviving configurations by modeled time. For one modeled placement scenario and configuration, the time is the per-block cost scaled by the number of residency waves:
 \begin{equation}
-\begin{array}{@{}l@{\;}l@{}}
+\begin{aligned}
 T_{\mathit{total}}
-&= T_{\mathit{block}} \cdot
-  \left\lceil \frac{N_{\mathit{blocks}}}{C_{\mathit{blocks}}} \right\rceil,\\[1.8ex]
+&=T_{\mathit{block}}
+  \left\lceil\frac{N_{\mathit{blocks}}}{C_{\mathit{blocks}}}\right\rceil,\\[0.6ex]
 N_{\mathit{blocks}}
-&= \prod_{d \in \mathcal{P}} \left\lceil \frac{N_d}{\tile_d} \right\rceil,\\[1.8ex]
-C_{\mathit{blocks}}
-&= \Nsm \cdot bps.
-\end{array}
+&=\prod_{d\in\mathcal{P}}\left\lceil\frac{N_d}{\tile_d}\right\rceil,
+\qquad C_{\mathit{blocks}}=\Nsm\cdot bps.
+\end{aligned}
 \label{eq:discrete-wave}
 \end{equation}
+This modeled total time is the quantized Stage-1 cost denoted by \(F(\tvec,\mathbf{b};S)\) in \autoref{eq:stage-one}.
 \(N_{\mathit{blocks}}\) is the grid size and \(C_{\mathit{blocks}}\) is the number of blocks resident across all SMs, so the ceiling counts how many waves the grid takes. This ceiling is an integer step function, so a smaller per-block cost can still raise \(T_{\mathit{total}}\) once it forces one extra wave. These step boundaries, not any smooth trend, produce the irregular landscape of \autoref{fig:motivation-landscape}, and a useful objective must track them.
 
 The per-block cost decomposes as
@@ -203,24 +200,22 @@ charging output initialization, cooperative loads, arithmetic, global writes, an
   \item Compute cost is
   \begin{equation}
 	  \begin{aligned}
-	  T_{\mathit{compute}}
-	  &= \work \cdot
-	     \left(n_{\mathit{op}}(s_{\mathit{out}})\Lf
-	     + K_{\mathit{total}}\cdot\cfma\right),\\
-	  \cfma
-	  &= n_{\mathit{op}}(s_{\mathit{red}})\Lf
-	   + \phi_{\mathit{smem}}\Ls
-	   + \phi_{\mathit{gmem}}\Lg
-	   + \creg.
+	  T_{\mathit{compute}} &= \work \cdot
+	    \left(n_{\mathit{op}}(s_{\mathit{out}})\Lf
+	    + K_{\mathit{total}}\cdot\cfma\right),\\[1ex]
+	  \cfma &= n_{\mathit{op}}(s_{\mathit{red}})\Lf
+	  + \phi_{\mathit{smem}}\Ls
+	  + \phi_{\mathit{gmem}}\Lg
+	  + \creg.
 	  \end{aligned}
 	  \label{eq:fma-cost}
 	  \end{equation}
-	  Here \(n_{\mathit{op}}(s)\) is the operation count of statement \(s\) in the statement metadata, \(s_{\mathit{out}}\) the statement that runs once per output, and \(s_{\mathit{red}}\) the reduction-body statement that runs \(K_{\mathit{total}}\) times; the counts add when a group holds several statements. The \(n_{\mathit{op}}(s_{\mathit{out}})\) work is charged once per output with no \(K_{\mathit{total}}\) factor, while the reduction body carries \(K_{\mathit{total}}\), and the factor \(\work\) scales both to the thread's output count. Both remain terms of \(T_{\mathit{compute}}\) and hence of the per-block cost \(T_{\mathit{block}}\) in \autoref{eq:block-cost}.
+	  The residual register term is \(\creg=\rho_{\mathrm{reg}}\Lr\), where \(\rho_{\mathrm{reg}}\) is the modeled number of register accesses associated with one reduction-body evaluation, derived from the statement metadata. The coefficient is independent of the modeled placement scenario, while its total contribution scales with the per-thread work through \autoref{eq:fma-cost}. Here \(n_{\mathit{op}}(s)\) is the operation count of statement \(s\) in the statement metadata, \(s_{\mathit{out}}\) the statement that runs once per output, and \(s_{\mathit{red}}\) the reduction-body statement that runs \(K_{\mathit{total}}\) times; the counts add when a group holds several statements. The \(n_{\mathit{op}}(s_{\mathit{out}})\) work is charged once per output with no \(K_{\mathit{total}}\) factor, while the reduction body carries \(K_{\mathit{total}}\), and the factor \(\work\) scales both to the thread's output count. Both remain terms of \(T_{\mathit{compute}}\) and hence of the per-block cost \(T_{\mathit{block}}\) in \autoref{eq:block-cost}.
   \item \(T_{\mathit{write}}=\work\cdot \Lg\), charging one global write per output.
   \item \(T_{\mathit{sync}}=2K_{\mathit{outer}}\Ly\cdot\mathbf{1}[\mathcal{A}_{\mathit{smem}}\ne\emptyset]\), charging two barriers per staging round.
 \end{itemize}
 
-The placement-to-register-blocking lever is the shared-read-per-FMA ratio \(\phi_{\square}\) of \autoref{eq:read-ratios}, the operand reads of class \(\square\in\{\mathit{smem},\mathit{gmem}\}\) per reduction step divided by the per-thread work \(\work\). A lower \(\phi_{\mathit{smem}}\) spreads each staged read over more arithmetic and lowers the \(\cfma\) term above, as long as the footprint still satisfies C3. For an outer-product contraction the staged reads of each operand depend on a single register factor, so \(\work\phi_{\mathit{smem}}\) is a sum of \(|\mathcal{P}|\) factors whose product is fixed at \(\work\). The arithmetic-mean-geometric-mean (AM-GM) inequality states that a sum of nonnegative terms with a fixed product is smallest when the terms are equal; applying it gives
+The link from modeled placement-scenario reasoning to register blocking is the shared-read-per-FMA ratio \(\phi_{\square}\) of \autoref{eq:read-ratios}, the operand reads of class \(\square\in\{\mathit{smem},\mathit{gmem}\}\) per reduction step divided by the per-thread work \(\work\). A lower \(\phi_{\mathit{smem}}\) spreads each staged read over more arithmetic and lowers the \(\cfma\) term above, as long as the footprint still satisfies C3. For an outer-product contraction the staged reads of each operand depend on a single register factor, so \(\work\phi_{\mathit{smem}}\) is a sum of \(|\mathcal{P}|\) factors whose product is fixed at \(\work\). The arithmetic-mean-geometric-mean (AM-GM) inequality states that a sum of nonnegative terms with a fixed product is smallest when the terms are equal; applying it gives
 \[
 \work\phi_{\mathit{smem}} \ge |\mathcal{P}| \cdot \work^{1/|\mathcal{P}|},
 \quad \text{with equality at } \rblk_d=\work^{1/|\mathcal{P}|}.
@@ -229,13 +224,13 @@ Balanced register blocking is therefore an analytical optimum rather than an imp
 
 The same lever behaves differently by kernel class, and \name selects the form from the access footprints. Symmetric contractions admit the balanced optimum above. Asymmetric or broadcast reductions such as \texttt{atax} in PolyBench~\cite{polybench} give \(\work\phi_{\mathit{smem}}=\rblk_i+1\) with no interior optimum, so the MILP picks the best point directly. Stencils such as Jacobi-2D~\cite{polybench} reuse data through halo overlap rather than a broadcast dimension. For one staged stencil operand, or several with the same halo, and with \(h_d\) the single-sided halo width,
 \begin{equation}
-\begin{array}{@{}l@{}}
+\begin{aligned}
 R^{\mathit{smem}}_{\mathit{in}}
 \approx \prod_{d\in\mathcal{P}}(\rblk_d+2h_d),
 \qquad
 \phi_{\mathit{smem}}
 = \prod_{d\in\mathcal{P}}\left(1+\frac{2h_d}{\rblk_d}\right).
-\end{array}
+\end{aligned}
 \label{eq:stencil-halo}
 \end{equation}
 A larger register tile drives \(\phi_{\mathit{smem}}\) toward one and can cut waves, while C3 still bounds it through the halo-inflated footprint. With several arrays and unequal halos the footprint becomes \(\sum_A\prod_d(\rblk_d+2h_{A,d})\), a product of sums rather than a single product, so the equal-term optimum no longer applies and \name evaluates the full objective over all candidates.
@@ -272,56 +267,81 @@ For GEMM, \(s_{\mathit{out}}=S_0\) and \(s_{\mathit{red}}=S_1\). The scaling sta
 \label{sec:solver}
 \label{sec:two-stage-solver}
 
-\autoref{eq:two-level}, \autoref{eq:model-summary}, and \autoref{eq:block-cost} form one hierarchy, not three objectives. \autoref{eq:block-cost} gives the per-block cost \(T_{\mathit{block}}\), \autoref{eq:model-summary} multiplies it by the integer wave count to form the inner objective for a fixed placement, and \autoref{eq:two-level} minimizes that inner objective across placements. \name solves \autoref{eq:two-level} by enumerating placements and solving the \autoref{eq:model-summary} subproblem for each, with \(T_{\mathit{block}}\) supplied by \autoref{eq:block-cost}. For the MILP encoding, for each \(S\in\Sigma\) and dimension \(d\), let
+\autoref{eq:two-level}, \autoref{eq:model-summary}, and \autoref{eq:block-cost} form one hierarchy, not three independent objectives. \autoref{eq:block-cost} gives the per-block cost \(T_{\mathit{block}}\), \autoref{eq:model-summary} multiplies it by the integer wave count to form the quantized primary objective for a fixed modeled scenario, and \autoref{eq:two-level} compares the primary per-scenario scores before using the secondary scores to resolve ties. \name evaluates \autoref{eq:two-level} by enumerating placement scenarios and applying the two-stage analytical selection below to each, with \(T_{\mathit{block}}\) supplied by \autoref{eq:block-cost}. For the Stage-1 MILP encoding, for each \(S\in\Sigma\) and dimension \(d\), let
 \(C_d=\{(v_{d,1},u_{d,1}),\ldots,(v_{d,K_d},u_{d,K_d})\}\) be the discrete
 \((\tile_d,b_d)\) pairs. Introduce a one-hot indicator:
 \[
-\begin{array}{ll}
-z_{d,k}\in\{0,1\}, &
-\sum_{k=1}^{K_d}z_{d,k}=1,\\[1.4ex]
-\tile_d=\sum_k v_{d,k}z_{d,k}, &
-b_d=\sum_k u_{d,k}z_{d,k}.
-\end{array}
+z_{d,k}\in\{0,1\},
+\qquad \sum_{k=1}^{K_d}z_{d,k}=1,
+\qquad \tile_d=\sum_k v_{d,k}z_{d,k},
+\qquad b_d=\sum_k u_{d,k}z_{d,k}.
 \]
 Products of \(z\)-variables in footprints and wave counts are linearized with
 auxiliary variables \(y\):
 \[
-\begin{array}{ll}
-y\le z_{d_1,k_1}, & y\le z_{d_2,k_2},\\[1.4ex]
-\multicolumn{2}{c}{
-y\ge z_{d_1,k_1}+z_{d_2,k_2}-1.}
-\end{array}
+y\le z_{d_1,k_1},
+\qquad y\le z_{d_2,k_2},
+\qquad y\ge z_{d_1,k_1}+z_{d_2,k_2}-1.
 \]
 The same technique handles nonlinear terms in C3 and C4.
 
-As previewed at \autoref{eq:two-level}, the inner solve has two stages. Stage 1 minimizes the quantized wave
-objective via MILP:
+The outer loop explicitly enumerates only the modeled placement-scenario set \(\Sigma\). For each fixed \(S\), the discrete tile/block choices are encoded by the one-hot variables above and the Stage-1 MILP is solved under C1--C4 to obtain \(F^*(S)\). Stage 2 then considers only the discrete assignments tied at the Stage-1 optimum, keeping placement-scenario enumeration and tile/block optimization as separate levels of the solving procedure.
+
+As previewed at \autoref{eq:two-level}, the inner solve is a two-stage analytical selection. For a fixed modeled placement scenario \(S\), Stage 1 minimizes the quantized wave cost over the feasible discrete domain:
 \begin{equation}
-\mathcal{V}_1 =
-\arg\min_{(\tvec,\mathbf{b})\in\mathcal{V}(S)}
-T_{\mathit{block}}\cdot
-\left\lceil\frac{N_{\mathit{blocks}}}{C_{\mathit{blocks}}}\right\rceil.
+\begin{aligned}
+F(\tvec,\mathbf{b};S)
+&=T_{\mathit{block}}(\tvec,\mathbf{b};S)
+  \left\lceil
+  \frac{N_{\mathit{blocks}}(\tvec)}
+       {C_{\mathit{blocks}}(\tvec,\mathbf{b};S)}
+  \right\rceil,\\
+F^*(S)
+&=\min_{(\tvec,\mathbf{b})\in\mathcal{V}(S)}
+  F(\tvec,\mathbf{b};S),\\
+\mathcal{V}_1(S)
+&=\left\{(\tvec,\mathbf{b})\in\mathcal{V}(S)
+  \mid F(\tvec,\mathbf{b};S)=F^*(S)\right\}.
+\end{aligned}
 \label{eq:stage-one}
 \end{equation}
-Equal wave counts can tie, so Stage 2 applies an LP tie-break without
-changing the Stage-1 optimum set. Let
-\(\omega=N_{\mathit{blocks}}/C_{\mathit{blocks}}\) be the relaxed wave count and
+Thus, \(\mathcal{V}_1(S)\) contains all feasible discrete tile/block configurations tied for the Stage-1 optimum.
+
+Stage 2 evaluates the cost with the wave ceiling removed only over \(\mathcal{V}_1(S)\):
 \begin{equation}
-\Phi = T_{\mathit{block}} \cdot \omega
-\label{eq:lp-relaxation}
+\Phi(\tvec,\mathbf{b};S)
+=T_{\mathit{block}}(\tvec,\mathbf{b};S)
+ \frac{N_{\mathit{blocks}}(\tvec)}
+      {C_{\mathit{blocks}}(\tvec,\mathbf{b};S)},
+\label{eq:relaxed-cost}
 \end{equation}
-be the relaxation of the Stage-1 objective. Stage 2 minimizes \(\Phi\) with the
-Stage-1 value fixed.
+\begin{equation}
+\begin{aligned}
+(\tvec_S^*,\mathbf{b}_S^*)
+&\in \mathop{\arg\min}_{(\tvec,\mathbf{b})\in\mathcal{V}_1(S)}
+ \Phi(\tvec,\mathbf{b};S),\\
+\Phi^*(S)
+&=\Phi(\tvec_S^*,\mathbf{b}_S^*;S).
+\end{aligned}
+\label{eq:stage-two}
+\end{equation}
+Stage 2 does not re-solve in a continuous tile/block space: \(\tvec\) and \(\mathbf{b}\) always come from the legal discrete Stage-1 optimum set. Only the wave count is relaxed, from \(\lceil N_{\mathit{blocks}}/C_{\mathit{blocks}}\rceil\) to \(N_{\mathit{blocks}}/C_{\mathit{blocks}}\). The relaxed-cost tie-break therefore produces neither fractional tile/block values nor a configuration that sacrifices the Stage-1 quantized optimum. This implements a lexicographic tie-break: the quantized Stage-1 objective has strict priority, and \(\Phi\) is consulted only among configurations tied at the Stage-1 optimum.
 
-Once the inner two-stage solve finishes for each \(S\in\Sigma\), the outer loop selects the scheme \(S^*\) with the lowest Stage-1 cost, breaking ties by \(\Phi\). For the regular affine and tensor kernels \name targets, the placement set stays small.
+Wave quantization can create plateaus in which multiple discrete configurations have the same Stage-1 objective. Stage 2 evaluates the corresponding unquantized cost only over the Stage-1 optimal set, recovering ordering information within a quantization plateau while preserving the quantized optimum. The integer ceiling captures the actual discrete wave behavior, while the relaxed ratio provides finer ranking information only when the primary objective is tied.
 
-The construction of \autoref{sec:abstraction} through \autoref{sec:solver} is identical for every kernel class. Dimension classification (\autoref{eq:dimension-roles}), candidate generation (\autoref{eq:tile-candidates}), feasibility (\autoref{eq:feasible-domain}), and the wave objective (\autoref{eq:model-summary}) are kernel-independent. Only the closed form of \(\phi_{\mathit{smem}}\) varies with the reuse pattern, taking the omitted-dimension form for contractions and the halo-amortization form of \autoref{eq:stencil-halo} for stencils, and \name selects between them from the access footprints. The stencil-specific caveat is that \(\phi_{\mathit{smem}}\) becomes a product of sums, so the interior AM-GM optimum no longer applies and \name evaluates all candidates.
+Once the two-stage selection finishes for every \(S\in\Sigma\), the outer enumeration applies the scenario comparison of \autoref{eq:two-level}, equivalently written in lexicographic form as
+\begin{equation}
+\begin{aligned}
+S^*
+&\in \mathop{\arg\min}_{S\in\Sigma}^{\mathrm{lex}}
+   \bigl(F^*(S),\Phi^*(S)\bigr),\\
+(\tvec^*,\mathbf{b}^*)
+&=(\tvec_{S^*}^*,\mathbf{b}_{S^*}^*).
+\end{aligned}
+\label{eq:outer-selection}
+\end{equation}
+Modeled placement scenarios are therefore compared first by \(F^*(S)\), with \(\Phi^*(S)\) used only when the primary costs tie. For programs representable by the metadata of \autoref{sec:metadata}, the scenario set stays small.
 
-\subsection{End-to-End Summary}
-\label{sec:gemm-end-to-end}
+The construction of \autoref{sec:abstraction} through \autoref{sec:solver} is kernel-independent: dimension classification, candidate generation, feasibility, and the wave objective take the same form for every class. Only the closed form of \(\phi_{\mathit{smem}}\) varies with the reuse pattern, the omitted-dimension form for contractions versus the halo-amortization form of \autoref{eq:stencil-halo} for stencils, with \name selecting between them from the access footprints; in the stencil case \(\phi_{\mathit{smem}}\) becomes a product of sums, so the interior AM-GM optimum no longer applies and \name evaluates all candidates.
 
-We trace the complete \name workflow via the GEMM example studied in \autoref{sec:metadata} through \autoref{sec:solver}. It begins by reading GPU hardware constants from device properties and running a one-time microbenchmark suite to obtain effective cost constants (\autoref{sec:gpu-target-profiling}), then reads the schedule tree to extract dimension classification, loop extents, access maps, and operation counts, from which it derives the tile and block candidate sets and the placement scheme enumeration \(\Sigma\) (\autoref{sec:compile-time-metadata}, \autoref{fig:gemm-schedule-metadata}).
-
-With metadata and hardware constants in hand, \name instantiates the feasible domain \(V(S)\) and the quantized wave objective for each \(S \in \Sigma\), coupling tile size, block shape, placement, occupancy, and register pressure into a single expression (\autoref{sec:abstraction} through \autoref{sec:cost}). The MILP+LP solver then selects the configuration \((\tvec^*, \mathbf{b}^*, S^*)\) with the lowest wave cost, recovering balanced register blocking as an analytical outcome rather than an imposed constraint (\autoref{sec:solver}).
-
-The selected parameters are written back as backend configuration that each backend's existing lowering turns into the launched kernel. No candidate kernel is generated or evaluated during selection.
+Tracing this end to end on the running GEMM example (\autoref{sec:metadata}\textendash\autoref{sec:solver}): profiled hardware constants and extracted schedule metadata instantiate \(\mathcal{V}(S)\) and the quantized objective for every \(S\in\Sigma\); the two-stage selection returns \((\tvec^*,\mathbf{b}^*,S^*)\), where \(S^*\) remains modeled analytical state, and only \(\tvec^*\) and \(\mathbf{b}^*\) are written back as backend configuration, with no candidate kernel generated or evaluated.

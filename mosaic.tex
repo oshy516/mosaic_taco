@@ -1,23 +1,23 @@
 %%
 %% Mosaic paper repository main file.
 %%
-\documentclass[sigplan,10pt,review,anonymous,screen]{acmart}
-\settopmatter{printfolios=true,printccs=false,printacmref=false}
-\renewcommand\footnotetextcopyrightpermission[1]{}
-\pagestyle{plain}
+\documentclass[acmsmall,screen]{acmart}
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
     Bib\TeX}}}
 
-\setcopyright{acmlicensed}
+\setcopyright{cc}
+\setcctype{by}
 \copyrightyear{2027}
 \acmYear{2027}
-\acmDOI{XXXXXXX.XXXXXXX}
-\acmConference[CGO '27]{IEEE/ACM International Symposium on Code Generation and Optimization}{March 2027}{Salt Lake City, Utah, USA}
-\acmBooktitle{Proceedings of the IEEE/ACM International Symposium on Code Generation and Optimization (CGO '27),
- March 2027, Salt Lake City, Utah, USA}
-\acmISBN{978-1-4503-XXXX-X/2027/03}
+\acmJournal{TACO}
+\acmVolume{1}
+\acmNumber{1}
+\acmArticle{1}
+\acmMonth{1}
+% Replace the following placeholder with the DOI assigned by ACM.
+\acmDOI{10.1145/XXXXXXX.XXXXXXX}
 
 % User-defined packages.
 \usepackage{xspace}
@@ -31,6 +31,7 @@
 \usepackage{adjustbox}
 \usepackage{array}
 \usepackage{tabularx}
+\usepackage{placeins}
 \usepackage{enumitem}
 \usepgfplotslibrary{statistics, groupplots}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, positioning, calc, matrix, backgrounds}
@@ -47,19 +48,23 @@
 \definecolor{color3}{RGB}{191,170,210}
 \definecolor{color4}{RGB}{147,197,235}
 \definecolor{color5}{RGB}{157,159,163}
-\captionsetup[table]{skip=3pt}
-\AtBeginDocument{%
-  \setlength{\textfloatsep}{8pt plus 0pt minus 2pt}%
-  \setlength{\dbltextfloatsep}{8pt plus 0pt minus 2pt}%
-  \setlength{\abovedisplayskip}{6pt plus 0pt minus 1pt}%
-  \setlength{\belowdisplayskip}{6pt plus 0pt minus 1pt}%
-  \setlength{\abovedisplayshortskip}{6pt plus 0pt minus 1pt}%
-  \setlength{\belowdisplayshortskip}{6pt plus 0pt minus 1pt}%
-}
 \usepackage[utf8]{inputenc}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{wrapfig}
+% Apply the layout rhythm after acmart installs its document-level defaults.
+\AtBeginDocument{%
+  \setlength{\intextsep}{8pt plus 2pt minus 2pt}%
+  \setlength{\textfloatsep}{4pt plus 1pt minus 1pt}%
+  \setlength{\floatsep}{8pt plus 2pt minus 2pt}%
+  \setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}%
+  \setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}%
+  \setlength{\abovedisplayskip}{4.2pt plus 1pt}%
+  \setlength{\belowdisplayskip}{4.2pt plus 1pt}%
+  \setlength{\abovedisplayshortskip}{0pt plus 1pt}%
+  \setlength{\belowdisplayshortskip}{2.1pt plus 1pt}%
+  \setlength{\jot}{4pt}%
+}
 \usepackage{listings}
 \definecolor{darkgray}{rgb}{.3,.3,.3}
 \definecolor{darkred}{rgb}{.6,0,0}
@@ -137,17 +142,46 @@
 \newcommand{\Sigmacand}{\Sigma_{\mathrm{cand}}}
 \begin{document}
 
+% Previous title read as a comparative claim against transformation scheduling
+% ("Beyond Schedule Search"), which contradicts the scope statement in
+% sec.intro.tex/sec.conclusion.tex: \name operates strictly after scheduling and
+% neither searches nor modifies it. Retitled to name the paper's own subject,
+% GPU execution space optimization, instead.
 % \title{\name: Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
 \title[Analytical Optimization of Architecture-Aware GPU Code Generation]
-{Unified Analytical Optimization of Architecture-Aware GPU Code Generation Beyond Schedule Search}
+{Unified Analytical Optimization of Architecture-Aware GPU Execution Space}
+
+\author{Shihan Yuan}
+\email{yuanshihan516@hnu.edu.cn}
+\orcid{0009-0005-9508-1660}
+\author{Junhui Peng}
+\email{pengjh0111@hnu.edu.cn}
+\orcid{0009-0006-7218-1930}
+\author{Guanghui Song}
+\email{sheensong@hnu.edu.cn}
+\orcid{0009-0001-8089-1151}
+\author{Feng Wang}
+\email{wangfeng@hnu.edu.cn}
+\orcid{0009-0002-4009-6783}
+\author{Kenli Li}
+\email{lkl@hnu.edu.cn}
+\orcid{0000-0002-2635-7716}
+\author{Jie Zhao}
+\email{jiezhao@hnu.edu.cn}
+\orcid{0000-0003-2303-9736}
+\affiliation{%
+  \institution{Hunan University}
+  \city{Changsha}
+  \country{China}
+}
 
 
 \begin{abstract}
-Selecting tile sizes, thread block shapes, shared memory placement, and register blocking factors is critical to the performance of compiler-generated GPU code. These decisions are tightly coupled via occupancy, shared memory capacity, register pressure, and memory locality. Existing systems typically rely on handcrafted heuristics or empirical search, making optimization either inaccurate or time-consuming.
+Selecting tile sizes and thread-block dimensions is critical to the performance of compiler-generated GPU code, yet these choices interact with shared-memory use, register pressure, occupancy, and memory locality. Existing analytical selectors address narrower subsets of this execution space, while empirical methods incur repeated search costs.
 
-This paper presents \name, a unified analytical framework for GPU execution space optimization. Unlike prior approaches that focus primarily on transformation scheduling, \name treats execution space optimization as a first-class code generation problem. Operating on transformed programs produced by existing schedulers, \name jointly models locality, occupancy, register pressure, and compute, memory, and synchronization costs within a single formulation. The model combines a quantized wave cost, a shared-read-per-FMA ratio, and a conservative register-working-set filter to analytically reason about GPU resource utilization. As a result, \name determines tile sizes, thread block dimensions, and shared memory placement without generating and evaluating large numbers of GPU kernels. The resulting formulation further yields a closed-form optimality condition for outer-product contractions, providing architectural insight beyond conventional autotuning.
+This paper presents \name, a unified analytical framework for GPU execution-space optimization on transformed programs whose schedule and mapping structure have been fixed upstream. \name selects tile and thread-block parameters while reasoning over abstract shared-memory placement scenarios using compiler-provided metadata and a once-per-architecture target profile. Its model combines a quantized wave objective, a shared-read-per-FMA ratio, and a conservative register-working-set filter, followed by a relaxed-cost tie-break among configurations tied at the primary optimum. The formulation also yields a closed-form balanced register-blocking condition for outer-product contractions.
 
-We evaluate \name on scientific kernels, deep learning operators, and end-to-end machine learning workloads. \name achieves average speedups of $1.21$--$1.49\times$ over the PPCG heuristic and $1.37$--$1.89\times$ over the EATSS analytical selector on PolyBench kernels, $1.88\times$ over PPCG on deep learning operators, and 4.22$\times$ on end-to-end workloads. Compared with TVM MetaSchedule, \name achieves slightly better performance, at $1.11\times$, while eliminating architecture-space search. In addition, \name reduces optimization overhead by $12$--$14\times$ over EATSS and by 2--4 orders of magnitude relative to autotuning, while remaining interpretable, portable, and compiler-independent.
+Across 25 PolyBench kernels on three NVIDIA GPUs, \name achieves geometric-mean speedups of $1.21$--$1.49\times$ over PPCG and measured latency ratios of $1.37$--$1.89\times$ relative to EATSS. On the RTX 4090, \name achieves $1.88\times$ over PPCG on deep learning operators and $4.22\times$ over PPCG on end-to-end workloads; on the evaluated end-to-end workloads, it achieves a $1.11\times$ geometric-mean speedup over TVM MetaSchedule. \name further reduces selection overhead by $12$--$14\times$ relative to EATSS and by $2$--$4$ orders of magnitude relative to measurement-driven autotuning.
 \end{abstract}
 
 \begin{CCSXML}
@@ -174,6 +208,8 @@ We evaluate \name on scientific kernels, deep learning operators, and end-to-end
 \ccsdesc[300]{Software and its engineering~General programming languages}
 \ccsdesc[300]{Mathematics of computing~Combinatorial optimization}
 
+\keywords{GPU Code Generation, Execution Space Optimization, Analytical Model, Polyhedral Compilation}
+
 \maketitle
 
 \input{sec.intro}
@@ -185,8 +221,6 @@ We evaluate \name on scientific kernels, deep learning operators, and end-to-end
 \input{sec.related}
 \input{sec.conclusion}
 
-%\clearpage
-\balance
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 

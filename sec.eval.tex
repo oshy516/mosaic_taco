@@ -2,32 +2,57 @@
 \section{Evaluation}
 \label{sec:eval}
 
-We evaluate \name across three generations of NVIDIA GPUs whose hardware and software platforms are summarized in \autoref{tab:platforms}. The architectural parameters required by the cost model, including memory capacities, execution limits, and the profiled \(\Lambda\)-family and \(c\) constants described in \autoref{sec:gpu-target-profiling} and used by \autoref{sec:cost}, are gathered once per GPU through the target description of \autoref{sec:overview} and reused across all kernels.
+Our cross-generation PolyBench evaluation uses three generations of NVIDIA GPUs whose hardware and software platforms are summarized in \autoref{tab:platforms}. The architectural parameters required by the cost model, including memory capacities, execution limits, and the profiled \(\Lambda\)-family and \(c\) constants described in \autoref{sec:gpu-target-profiling} and used by \autoref{sec:cost}, are gathered once per GPU through the target description of \autoref{sec:overview} and reused across all kernels.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
   \centering
-  \caption{Experimental platforms used in the evaluation.}
+  \caption{Experimental platforms. All experiments use CUDA's default \SI{48}{KiB} per-block shared-memory limit without opt-in.}
   \label{tab:platforms}
   \scriptsize
-  %\setlength{\tabcolsep}{3pt}
-  \begin{tabular}{lccccc}
+  \begin{adjustbox}{max width=\linewidth}
+  \begin{tabular}{lccc}
     \toprule
-    GPU & Arch. & Memory & OS & CUDA & Compiler \\
+     & RTX 4090 & A100 & V100 \\
     \midrule
-    RTX 4090 & Ada & \SI{48}{GiB} & Ubuntu 22.04 & 12.2 & NVCC 12.2.91 \\
-    A100 & Ampere & \SI{80}{GiB} & Ubuntu 22.04 & 12.2 & NVCC 12.2.91 \\
-    V100 & Volta & \SI{32}{GiB} & Ubuntu 22.04 & 12.2 & NVCC 12.2.91 \\
+    Architecture & Ada & Ampere & Volta \\
+    SM count & 128 & 108 & 80 \\
+    L1 / L2 cache & \SI{128}{KiB} / \SI{72}{MiB} & \SI{192}{KiB} / \SI{40}{MiB} & \SI{128}{KiB} / \SI{6}{MiB} \\
+    Shared mem.\ per block / SM & \SI{48}{KiB} / \SI{100}{KiB} & \SI{48}{KiB} / \SI{164}{KiB} & \SI{48}{KiB} / \SI{96}{KiB} \\
+    Registers per SM & 65536 & 65536 & 65536 \\
+    Global memory & \SI{48}{GiB} & \SI{80}{GiB} & \SI{32}{GiB} \\
+    OS & Ubuntu 22.04 & Ubuntu 22.04 & Ubuntu 22.04 \\
+    CUDA / Compiler & 12.2 / NVCC 12.2.91 & 12.2 / NVCC 12.2.91 & 12.2 / NVCC 12.2.91 \\
     \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
-\name consumes schedule metadata from PPCG0.09~\cite{ppcg-rep} for affine kernels and TVM0.22.dev0~\cite{tvm-rep} for tensor operators and workloads. We compare against PPCG's heuristic and its state-of-the-art EATSS analytical selector~\cite{eatss}, and the TVM MetaSchedule autotuner~\cite{metaschedule}. To isolate execution space selection, \name consumes the input each baseline uses, a PPCG schedule tree for the affine kernels and a TVM schedule trace for the tensor operators, and changes only tile sizes, block dimensions, and shared memory placement.
+All PolyBench/C 4.2.1~\cite{polybench} measurements, in \autoref{tab:benchmark} and in the bounded PPCG sweep of \autoref{subsec:bounded-ppcg-sweep}, use the official \texttt{EXTRALARGE} problem sizes and FP64 precision. The precision follows each backend's own convention rather than being imposed by \name: the PPCG path is FP64, matching the PolyBench/C and PolyNN~\cite{polynn} sources, while the TVM path is FP32, matching MetaSchedule's default tensor type; \autoref{tab:vendor-comparison} reports both FP64 and FP32/TF32 for the same GEMM shapes. Because the cost model reasons about tile footprints, register working sets, and traffic in bytes rather than in elements, the element width enters only through the array element size of \autoref{sec:compile-time-metadata}, so the same formulation drives both regimes without retuning; the FP64 gains over PPCG and the FP32 gains over MetaSchedule reported below are evidence that this holds in practice. \name selects configurations for a given precision and does not change it. We verified output correctness for every measured configuration.
+
+The same timing protocol is used for PolyBench, the bounded PPCG sweep, deep-learning operators, vendor comparisons, and end-to-end workloads. Each configuration is timed after 10 warm-up runs followed by 100 timed runs using CUDA events, and we report the median of the 100 timed runs as execution time. The median relative standard deviation across the successfully measured sweep configurations is \(0.30\%\).
+
+Solver time includes analytical model construction and solving across all modeled placement scenarios, but excludes backend code generation, GPU kernel compilation, and runtime measurement. This is the quantity reported in \autoref{tab:benchmark} and used for the selection-overhead comparisons below.
+
+We compare against PPCG's heuristic, the energy-aware EATSS analytical selector~\cite{eatss}, and the TVM MetaSchedule autotuner~\cite{metaschedule}. EATSS jointly optimizes latency and energy rather than latency alone; the reported latency comparison therefore reflects a different optimization objective.
+
+The selected tile and thread-block components of \name's configuration are passed to PPCG exclusively through the \texttt{--sizes} option; no other compilation flag beyond PPCG's default CUDA target settings is used. The call takes the general form
+\begin{quote}
+\ttfamily\footnotesize
+ppcg --target=cuda --sizes="\{kernel[id]->tile[$t_1$,...,$t_n$]; kernel[id]->block[$b_1$,...,$b_m$]\}" input.c -o output.cu
+\end{quote}
+where the tile and block values are exactly the \(t_*\) and \(b_*\) returned by the solver. The placement scheme \(S\) remains an abstract scenario in \name's model; PPCG independently determines concrete shared-memory staging through its existing promotion and lowering mechanism rather than through directives emitted by \name. TVM analogously determines concrete staging through its own lowering mechanism.
+
+\paragraph{Register and occupancy validation.}
+We validate the resource model on representative GEMM, ATAX, and Jacobi-2D programs by exhaustively compiling all 11,240 candidates that pass C4. Only 14 spill registers (\(0.1246\%\)), and all five kernels in the final \name selections are spill-free. Predicted resident blocks per SM exactly match the CUDA Occupancy API for four of the five; the sole mismatch, ATAX, predicts three blocks versus the API's two, because register-allocation granularity rounds PTXAS's reported 42 registers per thread up to an effective 48, which does not change the wave count. C4 remains a conservative lower-bound filter, not a predictor of backend register allocation.
+
+\paragraph{Profile sensitivity.}
+For GEMM, ATAX, and Jacobi-2D, we perturb the global-memory, shared-memory, register, and FMA cost constants one at a time by \(-20\%\), \(-10\%\), \(+10\%\), and \(+20\%\), giving 48 re-solves; all 48 select exactly the same tile sizes, thread-block dimensions, and modeled placement scenario as the original profile. The profile is target-specific rather than kernel- or shape-specific, so it is reused across workloads on the same GPU and regenerated only when the GPU, compute capability, or execution environment changes enough to affect the effective costs.
 
 \subsection{Performance on PolyBench Kernels}
 \label{subsec:polybench}
 
 % polybench table
-\begin{table*}[htbp]
+\begin{table}[tbp]
 \centering
 \caption{Execution time, solver time, and speedups on PolyBench benchmarks.}
 \label{tab:benchmark}
@@ -79,18 +104,64 @@ seidel-2d & 757.94 & 0.270 & \(1.27\times\) & \(1.51\times\) & \(5.63\times\) & 
 \bottomrule
 \end{tabular}
 }
-\end{table*}
+\end{table}
 
-We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils. The set is the union of PolyBench kernels suitable for CUDA code generation~\cite{ppcg} and the kernels evaluated by EATSS, allowing comparison against both the PPCG heuristic and EATSS on all three GPUs. \autoref{tab:benchmark} reports, for each platform, \name's execution and solver times together with its speedups over PPCG and EATSS and the reduction in selection overhead relative to EATSS. Speedup means are geometric while solver-time means are arithmetic. \name consistently outperforms both baselines across all three architectures. Over PPCG, it achieves mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ on the RTX 4090, A100, and V100, respectively; over EATSS, it achieves $1.37\times$, $1.89\times$, and $1.55\times$. Across kernels the gains trace to the coupled loop of \autoref{sec:bg-challenges} resolved in one formulation: the quantized wave cost (\autoref{sec:cost}) avoids occupancy-boundary cliffs, and the AM--GM balance (\autoref{sec:cost}) maximizes reuse per register. The effect is largest on contraction-heavy kernels, where this lever dominates and PPCG's fixed heuristic leaves register blocking unbalanced; on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ over PPCG by recovering \(\rblk_i=\rblk_j=\sqrt{\work}\). The advantage holds as register and shared memory budgets vary across GPU generations.
+We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils: the union of kernels suitable for CUDA code generation~\cite{ppcg} and those evaluated by EATSS, allowing comparison against both on all three GPUs. \autoref{tab:benchmark} reports, per platform, \name's execution and solver times, its speedups over PPCG and EATSS, and the reduction in selection overhead relative to EATSS; execution times are medians, speedup aggregates are geometric means, and solver-time aggregates are arithmetic means. \name achieves geometric-mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ over PPCG, and measured latency ratios of $1.37\times$, $1.89\times$, and $1.55\times$ relative to EATSS, on the RTX 4090, A100, and V100, respectively. These gains trace to the coupled loop of \autoref{sec:bg-challenges} resolved in one formulation: the quantized wave cost avoids occupancy-boundary cliffs, and the AM--GM balance maximizes reuse per register (\autoref{sec:cost}). The effect is largest on contraction-heavy kernels, where PPCG's fixed heuristic leaves register blocking unbalanced; on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ by recovering \(\rblk_i=\rblk_j=\sqrt{\work}\). The advantage holds as register and shared-memory budgets vary across GPU generations.
 
-\name is occasionally within about \(15\%\) of EATSS on the A100 for the small memory-bound kernels \texttt{atax}, \texttt{bicg}, and \texttt{gesummv}, where the analytical and searched optima nearly coincide. This behavior is consistent with \autoref{sec:kernel-specialization}: asymmetric reductions and memory-bound kernels gain less from balanced blocking than GEMM-like contractions, so the MILP has less room to improve over a reasonable baseline. The \texttt{trmm} and \texttt{trisolv} kernels have triangular, largely serial structure with little parallel headroom, so their feasible execution space is small and the PPCG default already sits near it. The \(0.93\times\) result on \texttt{trmm} comes from a wave-boundary tie where the Stage-2 LP (\autoref{sec:solver}) and PPCG's heuristic land on neighboring configurations of nearly equal cost. In \autoref{tab:benchmark}, ``--'' marks EATSS failures on \texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}.
+\name is occasionally within about \(15\%\) of EATSS on the A100 for the small memory-bound kernels \texttt{atax}, \texttt{bicg}, and \texttt{gesummv}, consistent with \autoref{sec:kernel-specialization}: asymmetric reductions and memory-bound kernels gain less from balanced blocking, leaving the MILP less room to improve. \texttt{trmm} and \texttt{trisolv} have triangular, largely serial structure with limited parallel headroom, leaving relatively little room for execution-space improvement. In \autoref{tab:benchmark}, ``--'' marks EATSS failures on \texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}.
+
+\subsection{Bounded PPCG Tile Sweep}
+\label{subsec:bounded-ppcg-sweep}
+
+To compare \name with an empirical tile search, we perform a deterministic bounded PPCG sweep containing 263--784 configurations per benchmark, sampled without regard to measured performance from three exhaustive classes: hardware-aligned powers of two, exact divisors of the problem size, and unaligned points. The sweep changes only tile sizes; PPCG continues to determine its block mapping and concrete shared-memory staging. Across the 25 benchmarks, we attempted 17,279 configurations and 15,960 compiled and executed successfully (92.37\%). Failures are dominated by CUDA resource-limit launch failures under PPCG's default block mapping, and failed points are excluded from the best-of-sweep result.
+
+\begin{figure}[!b]
+  \centering
+  \setlength{\abovecaptionskip}{3pt}
+  \begin{tikzpicture}[trim axis left,trim axis right]
+    \begin{axis}[
+      ybar,
+      width=0.86\linewidth,
+      height=1.0cm,
+      scale only axis,
+      bar width=7pt,
+      ymin=0.60,
+      ymax=1.31,
+      ytick={0.6,0.8,1.0,1.2},
+      clip=false,
+      ylabel={\(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\)},
+      symbolic x coords={correlation,covariance,gemm,gemver,gesummv,symm,syr2k,syrk,trmm,2mm,3mm,atax,bicg,doitgen,mvt,cholesky,gramschmidt,lu,trisolv,adi,fdtd-2d,heat-3d,jacobi-1d,jacobi-2d,seidel-2d,Geomean},
+      xtick=data,
+      xticklabels={corr.,cov.,gemm,gmvr.,gsum.,symm,syr2k,syrk,trmm,2mm,3mm,atax,bicg,doit.,mvt,chol.,gram.,lu,tris.,adi,fdtd,heat,jac-1d,jac-2d,seidel,\textbf{GMean}},
+      enlarge x limits=0.018,
+      xticklabel style={rotate=30,anchor=east,font=\tiny},
+      yticklabel style={font=\tiny},
+      ylabel style={font=\tiny},
+      ymajorgrids=true,
+      grid style=dashed,
+    ]
+      \addplot[fill=color1,draw=black] table[x=benchmark,y=speedup] {bounded_sweep_data.dat};
+      \draw[black,dashed,thick] (axis cs:correlation,1) -- (axis cs:Geomean,1);
+      \node[font=\tiny,rotate=90,anchor=west,
+            inner sep=0pt,outer sep=2pt]
+        at (axis cs:Geomean,0.972809917) {\textbf{0.973\(\boldsymbol{\times}\)}};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{\name{} speedup over bounded-sweep best on the RTX 4090; values above one favor \name{}.}
+  \Description{Bar chart of bounded-sweep-best time divided by Mosaic time for 25 PolyBench benchmarks and their geometric mean. A dashed horizontal line marks parity at one, and the geometric mean is 0.973 times.}
+  \label{fig:bounded-ppcg-sweep}
+\end{figure}
+
+The sweep deliberately extends beyond \name's analytical candidate set by including unaligned and non-divisor tile sizes. Sweep-best therefore serves as an empirical reference over the tested PPCG tile space rather than as the optimum of \name's own discrete domain. For each benchmark, we compute the fraction of successfully measured sweep configurations slower than PPCG's default and report the average of these fractions across all 25 benchmarks.
+
+Across the 25 benchmarks, PPCG's default configuration outperforms 71.2\% of the successfully measured sweep configurations on average and exceeds the sweep median in 18 cases.
+
+The sweep-best configurations achieve a $1.245\times$ geometric-mean speedup over this baseline, and beat it on all 25 benchmarks. \autoref{fig:bounded-ppcg-sweep} compares \name directly with sweep-best. The plotted ratio is \(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\): values above one favor \name and values below one favor sweep-best. The geometric-mean ratio is $0.973\times$, with \name faster on 12 of the 25 benchmarks and sweep-best faster on the remaining 13. Thus, \name reaches comparable aggregate performance without the hundreds of compile-and-run trials required by the bounded search for each benchmark.
 
 \subsection{Performance on Deep Learning Operators}
 \label{subsec:operators}
 
-We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from the PolyNN suite~\cite{polynn}, and FNN and Embedding extracted from the AlexNet~\cite{alexnet} and BERT~\cite{bert}, respectively. \autoref{fig:network-operators} reports the speedup. \name delivers large gains on CNN (\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of \(1.88\times\).
-
-\begin{figure}[htbp]
+\begin{wrapfigure}[11]{R}{0.49\textwidth}
 \centering
 \begin{tikzpicture}
 \begin{groupplot}[
@@ -101,7 +172,7 @@ We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from 
     },
     ybar,
     /pgf/bar width=5pt,
-    width=0.9\columnwidth,
+    width=0.43\textwidth,
     symbolic x coords={CNN,LSTM,RNN,FNN,Embed},
     xtick=data,
     enlarge x limits=0.13,
@@ -109,54 +180,90 @@ We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from 
     grid style=dashed,
     xticklabel style={font=\scriptsize, text depth=0pt},
     yticklabel style={font=\scriptsize},
-    nodes near coords,
-    every node near coord/.append style={font=\tiny, rotate=90, anchor=west},
-    point meta=explicit symbolic,
 ]
 
 \nextgroupplot[
-    height=0.24\columnwidth,
-    ymin=3, ymax=7.2,
+    height=2.35cm,
+    ymin=3, ymax=7.8,
     ytick={4.00,6.00}, yticklabels={4.00,6.00},
     legend style={
-        at={(0.5,0.97)}, anchor=north,
+        at={(0.56,0.61)}, anchor=center,
         legend columns=2, font=\scriptsize,
         draw=none, fill=none,
         /tikz/every even column/.append style={column sep=0.15cm},
     },
 ]
-\addplot[fill=color1, draw=black] coordinates {
+\addplot[fill=color1, draw=black, bar shift=-3.5pt] coordinates {
     (CNN,1)[] (LSTM,1)[] (RNN,1)[] (FNN,1)[] (Embed,1)[]
 };
-\addplot[fill=color4, draw=black] coordinates {
-    (CNN,5.734)[] (LSTM,1.015)[] (RNN,1.035)[] (FNN,1.002)[] (Embed,3.853)[]
+\addplot[
+    fill=color4,
+    draw=black,
+    bar shift=3.5pt,
+] coordinates {
+    (CNN,5.734)[]
+    (LSTM,1.015)[]
+    (RNN,1.035)[]
+    (FNN,1.002)[]
+    (Embed,3.853)[]
 };
 \legend{PPCG, \name}
 
 \nextgroupplot[
-    height=0.34\columnwidth,
-    ymin=0.985, ymax=1.06,
-    ytick={1.00,1.02,1.04}, yticklabels={1.00,1.02,1.04},
+    height=3.25cm,
+    ymin=0.980, ymax=1.145,
+    ytick={1.00,1.04,1.08},
+    yticklabels={1.00,1.04,1.08},
 ]
-\addplot[fill=color1, draw=black] coordinates {
-    (CNN,1)[549.69ms] (LSTM,1)[1010.2ms] (RNN,1)[1452.4ms] (FNN,1)[1.6980ms] (Embed,1)[544.26ms]
+\addplot[
+    fill=color1,
+    draw=black,
+    bar shift=-3.5pt,
+    nodes near coords,
+    point meta=explicit symbolic,
+    every node near coord/.append style={
+        font=\tiny,
+        rotate=90,
+        anchor=west,
+        inner sep=0pt,
+        transform canvas={yshift=1.5pt},
+    },
+] coordinates {
+    (CNN,1)[549.69\,ms]
+    (LSTM,1)[1010.2\,ms]
+    (RNN,1)[1452.4\,ms]
+    (FNN,1)[1.6980\,ms]
+    (Embed,1)[544.26\,ms]
 };
-\addplot[fill=color4, draw=black] coordinates {
+\addplot[
+    fill=color4,
+    draw=black,
+    bar shift=3.5pt,
+    nodes near coords,
+    point meta=explicit symbolic,
+    every node near coord/.append style={
+        font=\tiny,
+        rotate=90,
+        anchor=west,
+        inner sep=0pt,
+        transform canvas={yshift=1.5pt},
+    },
+] coordinates {
     (CNN,5.734)[]
     (LSTM,1.015)[$\mathbf{1.015}\mathbf{\times}$]
-    (RNN,1.035)[]
+    (RNN,1.035)[$\mathbf{1.035}\mathbf{\times}$]
     (FNN,1.002)[$\mathbf{1.002}\mathbf{\times}$]
     (Embed,3.853)[]
 };
-
-% Put the CNN, RNN, and Embed speedup labels inside the visible
-% lower portions of their Mosaic bars.
-\node[font=\tiny, rotate=90, anchor=east, xshift=4.5pt, yshift=-3.4pt]
-    at (axis cs:CNN,1.055) {$\mathbf{5.734}\mathbf{\times}$};
-\node[font=\tiny, rotate=90, anchor=east, xshift=4.5pt, yshift=-3.4pt]
-    at (axis cs:RNN,1.032) {$\mathbf{1.035}\mathbf{\times}$};
-\node[font=\tiny, rotate=90, anchor=east, xshift=4.5pt, yshift=-3.4pt]
-    at (axis cs:Embed,1.055) {$\mathbf{3.853}\mathbf{\times}$};
+% Keep the two values clipped by the broken axis in the lower panel.  Their
+% identical y coordinate gives them the same vertical placement, while the
+% explicit bar shift aligns each label with the center of its Mosaic bar.
+\node[font=\tiny, rotate=90, anchor=west, inner sep=0pt]
+    at ([xshift=3.5pt]axis cs:CNN,1.055)
+    {$\mathbf{5.734}\mathbf{\times}$};
+\node[font=\tiny, rotate=90, anchor=west, inner sep=0pt]
+    at ([xshift=3.5pt]axis cs:Embed,1.055)
+    {$\mathbf{3.853}\mathbf{\times}$};
 \end{groupplot}
 
 \coordinate (bl) at ($(group c1r1.south west)!0.5!(group c1r2.north west)$);
@@ -174,23 +281,60 @@ We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from 
 \caption{Performance of deep learning operators.}
 \Description{Bar chart comparing PPCG and \name speedups on CNN, LSTM, RNN, FNN, and embedding operators.}
 \label{fig:network-operators}
-\end{figure}
+\end{wrapfigure}
 
+The remaining experiments on deep learning operators, end-to-end workloads, and ablation are conducted on the RTX 4090; \autoref{subsec:polybench} provides the cross-architecture evaluation on PolyBench. We next evaluate \name on five deep learning operators: CNN, LSTM, and RNN from the PolyNN suite~\cite{polynn}, and FNN and Embedding extracted from the AlexNet~\cite{alexnet} and BERT~\cite{bert}, respectively. \autoref{fig:network-operators} reports the speedup. \name delivers large gains on CNN (\(5.73\times\)) and Embedding (\(3.85\times\)) and remains within \(4\%\) of PPCG on LSTM, RNN, and FNN, yielding a geometric-mean speedup of \(1.88\times\).
 
-These operators cover execution regimes. CNN and FNN are contraction/GEMM-like and therefore compute-intensive, a regime where the \(\phi\) ratio of \autoref{sec:cost} most effectively trades locality against register pressure, but FNN is small and regular enough that the PPCG default already lands close to the configuration selected by \name. LSTM, in contrast, is a memory-intensive recurrent operator; its performance is dominated more by data movement than by arithmetic intensity, leaving less room for the register-blocking trade-offs captured by the \(\phi\) ratio (\autoref{sec:cost}). Embedding is also data-movement dominated, but its default PPCG mapping leaves substantial opportunity for \name's placement and occupancy model to improve the execution configuration.
+These operators cover distinct regimes. CNN and FNN are contraction/GEMM-like and compute-intensive, where the \(\phi\) ratio of \autoref{sec:cost} most effectively trades locality against register pressure, but FNN is small and regular enough that the PPCG default already lands close to \name's configuration. LSTM is a memory-intensive recurrent operator whose performance is dominated more by data movement than arithmetic intensity, leaving less room for register-blocking trade-offs. Embedding is likewise data-movement dominated, but PPCG's default parameters leave substantial opportunity for \name's placement-aware and occupancy reasoning to improve the configuration under the fixed mapping.
 
-To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. The two selection costs differ in nature. \name's overhead is a single compile-time analytical solve: for each placement scheme in \(\Sigma\) it assembles and solves one MILP followed by an LP tie-break (\autoref{sec:solver}), and this cost is incurred once at compile time and does not involve generating or executing any GPU kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a candidate kernel with NVCC and runs it on the target GPU to record latency, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. One closed-form solve replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
+For a direct comparison with optimized reference libraries, \autoref{tab:vendor-comparison} reports the audited CUDA-event medians for five GEMM shapes and the CNN case, with relative performance defined as reference-library time divided by Mosaic time. The GEMM geometric-mean ratios are \(67.65\%\) for FP64 and \(24.93\%\) for FP32. The reference measurements use cuBLAS for GEMM and cuDNN for CNN; the FP32 cuBLAS path uses FP32 input/output with TF32 Tensor-Core computation, whereas Mosaic uses scalar FP32 FMA.
 
-\begin{figure}[!tbp]
+\begin{table}[!t]
+\centering
+\caption{Mosaic and vendor execution time for GEMM and CNN. CNN shape
+(\(\dagger\)): \(N=64\), \(C=64\), \(H=W=100\), \(K=32\), \(R=S=3\), and
+\(P=Q=98\), with unit stride.}
+\label{tab:vendor-comparison}
+\small
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.04}
+\scalebox{0.93}{%
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llrrrrrr@{}}
+\toprule
+\multirow{2}{*}{\textbf{Kernel}} & \multirow{2}{*}{\textbf{Shape}} &
+  \multicolumn{3}{c}{\textbf{FP64}} &
+  \multicolumn{3}{c}{\textbf{FP32 / TF32}} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+& & \textbf{Mosaic (ms)} & \textbf{Vendor (ms)} & \textbf{Perf. (\%)}
+  & \textbf{Mosaic (ms)} & \textbf{Vendor (ms)} & \textbf{Perf. (\%)} \\
+\midrule
+\multirow{6}{*}{GEMM}
+& \(1024\times1024\times1024\) & 2.9062 & 1.9123 & 65.80 & 0.1421 & 0.0369 & 26.00 \\
+& \(2048\times2048\times2048\) & 22.119 & 15.244 & 68.92 & 0.9138 & 0.2284 & 24.99 \\
+& \(4096\times4096\times4096\) & 167.52 & 113.11 & 67.52 & 6.9988 & 1.7730 & 25.33 \\
+& \(4096\times1024\times4096\) & 42.559 & 30.406 & 71.44 & 1.8401 & 0.4491 & 24.40 \\
+& \(1024\times4096\times4096\) & 44.821 & 29.037 & 64.79 & 1.8609 & 0.4458 & 23.95 \\
+& \textbf{Geometric mean} & -- & -- & \textbf{67.65} & -- & -- & \textbf{24.93} \\
+\midrule
+CNN\(^{\dagger}\) & -- & 7.1729 & 7.4175 & 103.4 & 7.9247 & 4.9041 & 61.88 \\
+\bottomrule
+\end{tabular*}
+}
+\end{table}
+
+To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. \name's overhead is a single compile-time analytical solve: for each modeled placement scenario in \(\Sigma\) it assembles one Stage-1 MILP and applies a relaxed-cost tie-break over the Stage-1 optimal discrete configurations (\autoref{sec:solver}), incurred once without generating or running any kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a kernel with NVCC and times it on the GPU, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. Our comparison targets tile/block sizes; even when MetaSchedule is restricted to this choice under a fixed schedule, its overhead stays the same order of magnitude, since the dominant cost is compiling and running each candidate. One two-stage analytical selection pass replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
+
+\begin{figure}[!htbp]
 \centering
 \definecolor{curveMosaic}{HTML}{CC0000}
 \definecolor{curveTVM}{HTML}{FF6666}
 \definecolor{curveSolverMosaic}{HTML}{0066CC}
 \definecolor{curveSolverTVM}{HTML}{4D94E6}
+\resizebox{0.85\textwidth}{!}{%
 \begin{tikzpicture}
-\begin{scope}[xshift=0.1\columnwidth, yshift=4.55cm]
+\begin{scope}[xshift=0.125\columnwidth, yshift=4.30cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=1, ymax=100,
@@ -215,7 +359,7 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
     yticklabel style={color=curveSolverMosaic, opacity=0},
@@ -234,9 +378,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\begin{scope}[xshift=0.55\columnwidth, yshift=4.55cm]
+\begin{scope}[xshift=0.440\columnwidth, yshift=4.30cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=0.1, ymax=100,
@@ -261,10 +405,10 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
-    yticklabel style={color=curveSolverMosaic, font=\scriptsize},
+    yticklabel style={color=curveSolverMosaic, opacity=0},
     ymode=log,
     ymin=0.01, ymax=2000,
     ytick={0.01,10,1000},
@@ -280,9 +424,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\begin{scope}[xshift=0.1\columnwidth, yshift=3cm]
+\begin{scope}[xshift=0.755\columnwidth, yshift=4.30cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=10, ymax=3000,
@@ -307,10 +451,10 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
-    yticklabel style={color=curveSolverMosaic, opacity=0},
+    yticklabel style={color=curveSolverMosaic, font=\scriptsize},
     ymode=log,
     ymin=0.1, ymax=2000,
     ytick={0.1,10,1000},
@@ -326,9 +470,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\begin{scope}[xshift=0.55\columnwidth, yshift=3cm]
+\begin{scope}[xshift=0.125\columnwidth, yshift=1.65cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=0.05, ymax=2,
@@ -353,10 +497,10 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
-    yticklabel style={color=curveSolverMosaic, font=\scriptsize},
+    yticklabel style={color=curveSolverMosaic, opacity=0},
     ymode=log,
     ymin=0.01, ymax=1000,
     ytick={0.01,1,100},
@@ -372,9 +516,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\begin{scope}[xshift=0.1\columnwidth, yshift=1.4cm]
+\begin{scope}[xshift=0.440\columnwidth, yshift=1.65cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=10, ymax=500,
@@ -399,7 +543,7 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
     yticklabel style={color=curveSolverMosaic, opacity=0},
@@ -418,9 +562,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\begin{scope}[xshift=0.55\columnwidth, yshift=1.4cm]
+\begin{scope}[xshift=0.755\columnwidth, yshift=1.65cm]
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     yticklabel style={color=curveMosaic, font=\scriptsize},
     ymode=log,
     ymin=1, ymax=50,
@@ -445,7 +589,7 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 };
 \end{axis}
 \begin{axis}[
-    width=0.45\columnwidth, height=2.35cm,
+    width=0.34\columnwidth, height=3.35cm,
     axis y line*=right,
     axis x line=none,
     yticklabel style={color=curveSolverMosaic, font=\scriptsize},
@@ -464,57 +608,62 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 \end{axis}
 \end{scope}
 
-\node[rotate=90, color=curveMosaic, font=\scriptsize] at (0\columnwidth, 3.38cm) {Execution time (ms)};
-\node[rotate=90, color=curveSolverMosaic, font=\scriptsize] at (0.91\columnwidth, 3.38cm) {Search/solver (s)};
-\node[font=\scriptsize] at (0.47\columnwidth, 0.80cm) {Number of Trials};
-\node at (0.48\columnwidth, 0.42cm) {
+\node[rotate=90, color=curveMosaic, font=\scriptsize] at (0.020\columnwidth, 3.25cm) {Execution time (ms)};
+\node[rotate=90, color=curveSolverMosaic, font=\scriptsize] at (1.100\columnwidth, 3.25cm) {Search/solver (s)};
+\node[font=\scriptsize] at (0.560\columnwidth, 0.72cm) {Number of Trials};
+\node at (0.560\columnwidth, -0.02cm) {
     \begin{tikzpicture}
         % Mosaic exec.
         \draw[color=curveMosaic, line width=0.7pt, solid] (0,0) -- (0.28,0);
         \filldraw[fill=curveMosaic, draw=white, line width=0.3pt]
             (0.16,0) circle (0.045);
-        \node[right, font=\tiny] at (0.34,0) {Mosaic exec.};
+        \node[right, font=\footnotesize] at (0.34,0) {Mosaic exec.};
 
         % TVM exec.
-        \draw[color=curveTVM, line width=0.7pt, solid] (1.57,0) -- (1.85,0);
+        \draw[color=curveTVM, line width=0.7pt, solid] (2.05,0) -- (2.33,0);
         \filldraw[fill=curveTVM, draw=white, line width=0.3pt]
-            (1.68,-0.05) rectangle (1.78,0.05);
-        \node[right, font=\tiny] at (1.89,0) {TVM exec.};
+            (2.16,-0.05) rectangle (2.26,0.05);
+        \node[right, font=\footnotesize] at (2.37,0) {TVM exec.};
 
         % Mosaic solver
-        \draw[color=curveSolverMosaic, line width=0.7pt, dashed] (3.00,0) -- (3.28,0);
+        \draw[color=curveSolverMosaic, line width=0.7pt, dashed] (3.85,0) -- (4.13,0);
         \filldraw[fill=curveSolverMosaic, draw=white, line width=0.3pt]
-            (3.16,0) circle (0.045);
-        \node[right, font=\tiny] at (3.34,0) {Mosaic solver};
+            (4.01,0) circle (0.045);
+        \node[right, font=\footnotesize] at (4.19,0) {Mosaic solver};
 
         % TVM search
-        \draw[color=curveSolverTVM, line width=0.7pt, dashed] (4.75,0) -- (5.03,0);
+        \draw[color=curveSolverTVM, line width=0.7pt, dashed] (6.10,0) -- (6.38,0);
         \filldraw[fill=curveSolverTVM, draw=white, line width=0.3pt]
-            (4.86,-0.05) rectangle (4.96,0.05);
-        \node[right, font=\tiny] at (5.09,0) {TVM search};
+            (6.21,-0.05) rectangle (6.31,0.05);
+        \node[right, font=\footnotesize] at (6.44,0) {TVM search};
     \end{tikzpicture}
 };
 
+% Reset to symmetric bounds so labels cannot bias the six-panel composition.
+\pgfresetboundingbox
+\path[use as bounding box] (-0.031\columnwidth,-0.25cm) rectangle (1.151\columnwidth,6.35cm);
+
 \end{tikzpicture}
+}
 \caption{Execution time and search/solver overhead for six operators, comparing with TVM MetaSchedule. Solid lines show execution time; dashed lines show selection cost.}
 \Description{Six curve plots for CNN, LSTM, RNN, FNN, embedding, and matmul comparing \name and tvm SSSRRSRS execution time and search or solver overhead.}
 \label{fig:network-operator-curves}
 \end{figure}
 
-\autoref{fig:network-operator-curves} includes a sixth operator, Matmul, scheduled from TVM metadata to match the MetaSchedule comparison. TVM exposes \texttt{tvm.relay.nn.matmul} as a first-class operator with native MetaSchedule support, which lets us extend the TVM evaluation to a standalone dense contraction. The PPCG side covers the same dense-contraction case through the GEMM kernel of \autoref{subsec:polybench}, so Matmul is not repeated in \autoref{fig:network-operators}.
+\autoref{fig:network-operator-curves} includes a sixth operator, Matmul, scheduled from TVM metadata; \texttt{tvm.relay.nn.matmul} is a first-class operator with native MetaSchedule support, extending the evaluation to a standalone dense contraction. The PPCG side covers the same case through the GEMM kernel of \autoref{subsec:polybench}, so Matmul is not repeated in \autoref{fig:network-operators}.
 
-\par\vspace{-3.5pt}
-
+% Keep Fig. 6 before the next subsection without forcing a new page.
+\FloatBarrier
 \subsection{Performance on End-to-End Workloads}
 \label{subsec:e2e}
 
-The evaluations from \autoref{subsec:operators} through \autoref{subsec:ablation} are conducted on the RTX 4090; the A100 and V100 follow the trends in \autoref{subsec:polybench} and are omitted for brevity.
-
-We compose the operators into three end-to-end workloads spanning the major network families: AlexNet~\cite{alexnet} (CNN), Seq2Seq~\cite{lstm} (RNN), and BertTiny~\cite{bert} (Transformer). \autoref{fig:e2e-fourbar} reports the per-network speedup of \name over both PPCG and TVM, with the baseline execution times shown on the left of the corresponding bars. Over PPCG, \name achieves $1.66\times$, $9.23\times$, and $4.90\times$ on AlexNet, Seq2Seq, and BertTiny, respectively, for a mean speedup of $4.22\times$. Over TVM MetaSchedule, \name achieves $1.16\times$, $1.05\times$, and $1.13\times$, for a mean of $1.11\times$. \name thus slightly exceeds a state-of-the-art autotuner on full workloads with no architecture-space search, while improving substantially over PPCG's heuristic configurations. The end-to-end gains over PPCG are more pronounced than the per-operator gains of \autoref{subsec:operators}, as consistently good execution space choices across consecutive layers compound into a larger overall improvement.
-
-\begin{figure}[!tbp]
+% Match the half-width presentation used by Fig. 8 and keep this figure inside
+% the end-to-end subsection.  The explicit line count prevents the wrap from
+% carrying into the following subsection.
+\begin{wrapfigure}[10]{r}{0.49\textwidth}
 \centering
 \begin{tikzpicture}
+\definecolor{figSevenPurple}{RGB}{181,145,204}
 \begin{groupplot}[
     group style={
         group size=1 by 2,
@@ -522,15 +671,16 @@ We compose the operators into three end-to-end workloads spanning the major netw
         xticklabels at=edge bottom,
     },
     ybar,
-    /pgf/bar width=6pt,
-    width=0.9\columnwidth,
-    symbolic x coords={AlexNet,Seq2Seq,BertTiny},
-    xtick=data,
-    enlarge x limits=0.18,
+    /pgf/bar width=4pt,
+    width=\linewidth,
+    xmin=-0.25,
+    xmax=1.69,
+    xtick={0,0.72,1.44},
+    xticklabels={AlexNet,Seq2Seq,BertTiny},
     ymajorgrids=true,
     grid style=dashed,
-    xticklabel style={font=\scriptsize},
-    yticklabel style={font=\scriptsize},
+    xticklabel style={font=\tiny},
+    yticklabel style={font=\tiny},
     nodes near coords,
     every node near coord/.append style={
         font=\tiny,
@@ -540,94 +690,90 @@ We compose the operators into three end-to-end workloads spanning the major netw
     point meta=explicit symbolic,
 ]
 \nextgroupplot[
-    height=0.34\columnwidth,
+    height=2.42cm,
     ymin=1.4,
-    ymax=14,
-    ytick={2,4,6,8,10,12},
-    yticklabels={2,4,6,8,10,12},
+    ymax=13.5,
+    % Affinely map the displayed [1.4,10] range onto the former [1.4,8]
+    % range.  Thus the 10x tick occupies the former 8x position and the
+    % space above it is reserved for the legend instead of covering bars.
+    ytick={1.860465,4.162791,8.0},
+    yticklabels={2,5,10},
     legend style={
-        at={(0.51,0.98)},
-        anchor=north,
+        at={(axis cs:0.72,11.2)},
+        anchor=center,
         legend columns=4,
-        font=\scriptsize,
+        font=\tiny,
         draw=none,
         fill=none,
         /tikz/every even column/.append style={
-            column sep=0.12cm
+            column sep=0.04cm
         },
     },
 ]
-\addplot[fill=color1,draw=black] coordinates {
-    (AlexNet,1)[]
-    (Seq2Seq,1)[]
-    (BertTiny,1)[]
+\addplot[fill=color1,draw=black,bar shift=-9pt] coordinates {
+    (0,1.093023)[]
+    (0.72,1.093023)[]
+    (1.44,1.093023)[]
 };
-\addplot[fill=color4,draw=black] coordinates {
-    (AlexNet,1.660)[]
-    (Seq2Seq,9.227)[]
-    (BertTiny,4.900)[]
+\addplot[
+    fill=figSevenPurple,
+    draw=black,
+    bar shift=-3pt
+] coordinates {
+    (0,1.599535)[]
+    (0.72,7.406767)[]
+    (1.44,4.086047)[]
 };
-\addplot[fill=color2,draw=black] coordinates {
-    (AlexNet,1)[]
-    (Seq2Seq,1)[]
-    (BertTiny,1)[]
+\addplot[fill=color2,draw=black,bar shift=3pt] coordinates {
+    (0,1.093023)[]
+    (0.72,1.093023)[]
+    (1.44,1.093023)[]
 };
-\addplot[fill=color4,draw=black] coordinates {
-    (AlexNet,1.159)[]
-    (Seq2Seq,1.052)[]
-    (BertTiny,1.127)[]
+\addplot[fill=color4,draw=black,bar shift=9pt] coordinates {
+    (0,1.215047)[]
+    (0.72,1.132930)[]
+    (1.44,1.190488)[]
 };
 
 \legend{PPCG, \name/PPCG, TVM, \name/TVM}
 \nextgroupplot[
-    height=0.30\columnwidth,
+    height=2.5cm,
     ymin=0.9,
-    ymax=1.22,
+    % Headroom above the 1.20 tick so the rotated baseline-time and speedup
+    % labels clear the panel border instead of colliding with the axis break.
+    ymax=1.40,
     ytick={1.00,1.10,1.20},
     yticklabels={1.00,1.10,1.20},
 ]
 
-\addplot[fill=color1,draw=black] coordinates {
-    (AlexNet,1)[850.869ms]
-    (Seq2Seq,1)[102720ms]
-    (BertTiny,1)[226.710ms]
+\addplot[fill=color1,draw=black,bar shift=-9pt] coordinates {
+    (0,1)[850.869ms]
+    (0.72,1)[102720ms]
+    (1.44,1)[226.710ms]
 };
-\addplot[fill=color4,draw=black] coordinates {
-    (AlexNet,1.660)[]
-    (Seq2Seq,9.227)[]
-    (BertTiny,4.900)[]
+\addplot[fill=figSevenPurple,draw=black,bar shift=-3pt] coordinates {
+    (0,1.660)[]
+    (0.72,9.227)[]
+    (1.44,4.900)[]
 };
-\addplot[fill=color2,draw=black] coordinates {
-    (AlexNet,1)[26.2720ms]
-    (Seq2Seq,1)[614.433ms]
-    (BertTiny,1)[5.40400ms]
+\addplot[fill=color2,draw=black,bar shift=3pt] coordinates {
+    (0,1)[26.2720ms]
+    (0.72,1)[614.433ms]
+    (1.44,1)[5.40400ms]
 };
-\addplot[fill=color4,draw=black] coordinates {
-    (AlexNet,1.159)[\textbf{1.159$\times$}]
-    (Seq2Seq,1.052)[\textbf{1.052$\times$}]
-    (BertTiny,1.127)[\textbf{1.127$\times$}]
+\addplot[fill=color4,draw=black,bar shift=9pt] coordinates {
+    (0,1.159)[\textbf{1.159$\times$}]
+    (0.72,1.052)[\textbf{1.052$\times$}]
+    (1.44,1.127)[\textbf{1.127$\times$}]
 };
-\node[
-    font=\tiny,
-    rotate=90,
-    anchor=east
-]
-at ([xshift=-4pt]axis cs:AlexNet,1.205)
-{\textbf{1.660$\times$}};
-\node[
-    font=\tiny,
-    rotate=90,
-    anchor=east
-]
-at ([xshift=-4pt]axis cs:Seq2Seq,1.205)
-{\textbf{9.227$\times$}};
-\node[
-    font=\tiny,
-    rotate=90,
-    anchor=east
-]
-at ([xshift=-4pt]axis cs:BertTiny,1.205)
-{\textbf{4.900$\times$}};
+% Put all Mosaic/PPCG values inside the visible lower-axis portion of the
+% second bar, with the same explicit -3pt shift used by that bar series.
+\node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
+    at ([xshift=-3pt]axis cs:0,1.36) {$1.660\times$};
+\node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
+    at ([xshift=-3pt]axis cs:0.72,1.36) {$9.227\times$};
+\node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
+    at ([xshift=-3pt]axis cs:1.44,1.36) {$4.900\times$};
 \end{groupplot}
 \coordinate (bl) at
     ($(group c1r1.south west)!0.5!(group c1r2.north west)$);
@@ -647,7 +793,7 @@ at ([xshift=-4pt]axis cs:BertTiny,1.205)
     font=\scriptsize
 ]
 at (
-    [xshift=-20pt,yshift=-0pt]
+    [xshift=-15pt,yshift=-0pt]
     $(group c1r1.west)!0.5!(group c1r2.west)$
 ){Execution time speedup};
 \end{tikzpicture}
@@ -657,29 +803,33 @@ Four bars per network: PPCG baseline, \name{} over PPCG,
 TVM baseline, and \name{} over TVM.
 }
 \label{fig:e2e-fourbar}
-\end{figure}
+\end{wrapfigure}
 
+We compose the operators into three end-to-end workloads spanning the major network families: AlexNet~\cite{alexnet} (CNN), Seq2Seq~\cite{lstm} (RNN), and BertTiny~\cite{bert} (Transformer). \autoref{fig:e2e-fourbar} reports the per-network speedup of \name over both PPCG and TVM, with baseline execution times shown left of the corresponding bars. Over PPCG, \name achieves $1.66\times$, $9.23\times$, and $4.90\times$ on AlexNet, Seq2Seq, and BertTiny (geometric mean $4.22\times$); over TVM MetaSchedule, it achieves $1.16\times$, $1.05\times$, and $1.13\times$ (geometric mean $1.11\times$). In this fixed-schedule comparison, \name achieves slightly lower end-to-end latency than MetaSchedule without measurement-driven search, while improving substantially over PPCG's heuristic. The end-to-end gains over PPCG exceed the per-operator gains of \autoref{subsec:operators} because consistently good execution-space choices across consecutive layers compound into a larger overall improvement.
 
+% Keep Fig. 7 inside the end-to-end subsection.
+\FloatBarrier
 \subsection{Ablation Study}
 \label{subsec:ablation}
 
-We ablate \name's three components cumulatively. FP-Wave keeps only the quantized wave objective (\autoref{sec:cost}) under a single fixed placement, disabling both the register-feasibility filter and placement enumeration. RF-Wave adds the conservative register filter C4 (\autoref{sec:constraints}) while holding placement fixed, so the step from FP-Wave to RF-Wave isolates the filter. Full \name further enables placement enumeration over \(\Sigma\) (\autoref{sec:abstraction}), so the step from RF-Wave to full \name isolates placement. With FP-Wave as the baseline, RF-Wave improves performance by a mean of $1.37\times$ and full \name by $1.84\times$, the largest gain on CNN, where filtering and placement together cut the selected configuration from $265.793$~ms to $95.851$~ms. 
+We ablate \name's three components cumulatively; FP-Wave keeps only the quantized wave objective (\autoref{sec:cost}) under a single fixed modeled placement scenario.
 
-\begin{figure}[htbp]
+\begin{wrapfigure}[10]{R}{0.49\textwidth}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
     ybar,
-    /pgf/bar width=5pt,
-    width=0.9\columnwidth,
-    height=0.40\columnwidth,
-    symbolic x coords={covariance,syrk,3mm,gemm,cnn},
-    xtick=data,
-    enlarge x limits=0.15,
+    /pgf/bar width=4pt,
+    width=\linewidth,
+    height=3.5cm,
+    xmin=-0.36,
+    xmax=3.24,
+    xtick={0,0.72,1.44,2.16,2.88},
+    xticklabels={covariance,syrk,3mm,gemm,cnn},
     ymin=0.8,
-    ymax=3.0,
-    ytick={1.0,1.5,2.0,2.5},
-    yticklabels={1.0,1.5,2.0,2.5},
+    ymax=4.0,
+    ytick={1.0,1.5,2.0,2.5,3.0,3.5},
+    yticklabels={1.0,1.5,2.0,2.5,3.0,3.5},
     ymajorgrids=true,
     grid style=dashed,
     xticklabel style={font=\scriptsize},
@@ -687,7 +837,12 @@ We ablate \name's three components cumulatively. FP-Wave keeps only the quantize
     ylabel={Execution time speedup},
     ylabel style={font=\scriptsize},
     nodes near coords,
-    every node near coord/.append style={font=\tiny, rotate=90, anchor=west},
+    every node near coord/.append style={
+        font=\tiny,
+        rotate=90,
+        anchor=west,
+        inner sep=0pt
+    },
     point meta=explicit symbolic,
     legend style={
         at={(0.5,0.98)}, anchor=north,
@@ -696,39 +851,41 @@ We ablate \name's three components cumulatively. FP-Wave keeps only the quantize
         /tikz/every even column/.append style={column sep=0.12cm}
     },
 ]
-\addplot[fill=color1, draw=black] coordinates {
-    (covariance,1)[31.512ms]
-    (syrk,1)[28.324ms]
-    (3mm,1)[50.674ms]
-    (gemm,1)[36.994ms]
-    (cnn,1)[265.793ms]
+\addplot[fill=color1, draw=black, bar shift=-6pt] coordinates {
+    (0,1)[31.512ms]
+    (0.72,1)[28.324ms]
+    (1.44,1)[50.674ms]
+    (2.16,1)[36.994ms]
+    (2.88,1)[265.793ms]
 };
-\addplot[fill=color3, draw=black] coordinates {
-    (covariance,1.152)[\textbf{1.152$\times$}]
-    (syrk,1.319)[\textbf{1.319$\times$}]
-    (3mm,1.004)[\textbf{1.004$\times$}]
-    (gemm,1.125)[\textbf{1.125$\times$}]
-    (cnn,2.337)[]
+\addplot[fill=color3, draw=black, bar shift=0pt] coordinates {
+    (0,1.152)[\textbf{1.152$\times$}]
+    (0.72,1.319)[\textbf{1.319$\times$}]
+    (1.44,1.004)[\textbf{1.004$\times$}]
+    (2.16,1.125)[\textbf{1.125$\times$}]
+    (2.88,2.337)[]
 };
-\addplot[fill=color4, draw=black] coordinates {
-    (covariance,1.827)[]
-    (syrk,1.439)[\textbf{1.439$\times$}]
-    (3mm,1.556)[\textbf{1.556$\times$}]
-    (gemm,1.630)[\textbf{1.630$\times$}]
-    (cnn,2.773)[]
+\addplot[fill=color4, draw=black, bar shift=6pt] coordinates {
+    (0,1.827)[]
+    (0.72,1.439)[\textbf{1.439$\times$}]
+    (1.44,1.556)[\textbf{1.556$\times$}]
+    (2.16,1.630)[\textbf{1.630$\times$}]
+    (2.88,2.773)[]
 };
 \legend{FP-Wave, RF-Wave, Mosaic}
-\node[font=\tiny, rotate=90, anchor=center] at ([xshift=7pt]axis cs:covariance,1.45) {\textbf{1.827$\times$}};
-\node[font=\tiny, rotate=90, anchor=center] at (axis cs:cnn,1.93) {\textbf{2.337$\times$}};
-\node[font=\tiny, rotate=90, anchor=center] at ([xshift=7pt]axis cs:cnn,2.28) {\textbf{2.773$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:0,1.45) {\textbf{1.827$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at (axis cs:2.88,1.93) {\textbf{2.337$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:2.88,2.28) {\textbf{2.773$\times$}};
 \end{axis}
 \end{tikzpicture}
-\caption{Ablation study on \name's individual components.}
+\caption{Ablation of \name's individual components.}
 \Description{Grouped bar chart showing execution-time speedups of RF-Wave and Mosaic over the FP-Wave baseline on covariance, syrk, 3mm, gemm, and CNN.}
 \label{fig:ablation}
-\end{figure}
+\end{wrapfigure}
+
+It disables both the register-feasibility filter and placement-scenario enumeration. RF-Wave adds the conservative register filter C4 while holding the modeled placement scenario fixed, isolating the filter's effect; full \name further enables placement-scenario enumeration over \(\Sigma\) (\autoref{sec:abstraction}), isolating the effect of placement-scenario reasoning. With FP-Wave as the baseline, RF-Wave improves performance by a geometric mean of $1.32\times$ and full \name by $1.79\times$, the largest gain on CNN, where filtering and placement-aware analytical reasoning together cut the selected configuration from $265.793$~ms to $95.851$~ms.
 
 \subsection{Solver Overhead and Scalability}
 \label{subsec:overhead}
 
-Finally, we examine the cost of \name's analytical selection, reported in the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solving in well under one second for the large majority of kernels and in at most a few seconds in the most demanding case (e.g., \texttt{syr2k} at $3.32$~s on the RTX 4090), since the feasible domain is bounded by the guard-free candidate sets of \autoref{sec:abstraction} and pruned by the conservative filters of \autoref{sec:constraints} before the MILP is ever invoked. Relative to EATSS, \name reduces selection overhead by mean factors of $12.6\times$, $13.6\times$, and $13.9\times$ on RTX 4090, A100, and V100, respectively, and the gap relative to the trial-based search of TVM spans several orders of magnitude (\autoref{fig:network-operator-curves}). As with the per-architecture profile, this one-time compile-time cost has no runtime tuning loop, showing that \name scales to large, real-world kernels and workloads. \\
+Finally, we examine the cost of \name's analytical selection, reported in the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solving in well under one second for most kernels and at most a few seconds in the most demanding case (\texttt{syr2k} at $3.32$~s on the RTX 4090). The formulation introduces decision variables over the bounded candidate pairs of \autoref{sec:abstraction} and applies the resource constraints of \autoref{sec:constraints} within each per-scenario solve. Its model size is therefore determined by the discrete candidate counts and the small placement-scenario set, rather than by the number of dynamic loop iterations. Relative to EATSS, \name reduces selection overhead by arithmetic-mean factors of $12.6\times$, $13.6\times$, and $13.9\times$ on RTX 4090, A100, and V100; unlike the latency ratios, this comparison is unaffected by the objective mismatch, since both selectors are analytical. This one-time compile-time cost requires no runtime tuning loop and remains modest across the evaluated kernels.

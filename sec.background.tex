@@ -2,13 +2,11 @@
 \section{Background and Motivation}
 \label{sec:background}
 
-This section introduces the background and the GPU-specific challenges behind analytical selection.
-
 \subsection{GPU Execution Space Decisions}
 \label{sec:bg-decisions}
 \label{sec:gpu-execution-model}
 
-A GPU kernel launches a grid of thread blocks; each block runs on an SM whose resident-block count is limited by block/thread limits, per-block shared memory, and per-thread registers. \name targets the execution space decisions that set these quantities: tile sizes, thread block dimensions, thread mappings, shared memory placement, and register blocking. Larger tiles improve reuse but grow footprint and live state, while smaller tiles raise occupancy but expose less locality. As each tile or placement choice moves several of these limits at once, they cannot be treated as independent dials.
+A GPU kernel launches a grid of thread blocks; each block runs on an SM whose resident-block count is limited by block/thread limits, per-block shared memory, and per-thread registers. Under the compiler-provided mapping, \name selects tile sizes and thread-block dimensions while reasoning over abstract shared-memory placement scenarios and accounting for occupancy and register pressure (\autoref{sec:intro}). Larger tiles improve reuse but grow footprint and live state, while smaller tiles raise occupancy but expose less locality. As each tile or modeled placement scenario moves several of these limits at once, they cannot be treated as independent dials.
 
 \name does not perform transformation scheduling. It starts from a transformed program whose legal order is fixed by an existing scheduler: schedule trees and affine accesses for polyhedral compilers~\cite{ppcg,tc}, or schedule traces and tensor metadata for template compilers~\cite{halide,tvm}. From this representation, \name extracts loop extents, schedule annotations, access footprints, read/write polarity, operation counts, and coalescing layout, enough to classify dimensions and array roles without depending on compiler internals.
 
@@ -17,21 +15,22 @@ A GPU kernel launches a grid of thread blocks; each block runs on an SM whose re
 %\label{sec:bg-why}
 %\label{sec:execution space-motivation}
 
-To make the case concrete, we hold one GEMM (general matrix multiplication) schedule fixed, the running example detailed in \autoref{fig:gemm-schedule-metadata}, and sweep only its execution space parameters: tile sizes along the output dimensions, thread block shapes, and shared memory placement. Of 5,000 candidate configurations, 2,232 launch successfully; PPCG~\cite{ppcg} emits each kernel and we measure its time on an RTX 4090, with \autoref{fig:motivation-landscape} plotting the result.
-
-\begin{figure}[htbp]
+\begin{wrapfigure}[25]{R}{0.49\textwidth}
   \centering
   \includegraphics[width=\linewidth]{figure1_main.pdf}
   \caption{GEMM execution space landscape on RTX 4090 under a fixed schedule. (a) Log-ratio runtime for configurations that successfully launch, with measured and predicted optima marked. (b) One-dimensional slice at \name's selected block-thread count, showing measured runtime as a function of the per-thread workload.}
   \Description{Measured performance landscape for GPU GEMM execution space configurations.}
   \label{fig:motivation-landscape}
-\end{figure}
+  \par\addvspace{\medskipamount}
+\end{wrapfigure}
+
+To make the case concrete, we hold one GEMM (general matrix multiplication) schedule fixed, the running example detailed in \autoref{fig:gemm-schedule-metadata}, and sweep only tile sizes along the output dimensions and thread-block dimensions. These changes can induce different concrete shared-memory staging choices through PPCG's backend lowering. Of 5,000 candidate configurations, 2,232 launch successfully; PPCG~\cite{ppcg} emits each kernel and we measure its time on an RTX 4090, with \autoref{fig:motivation-landscape} plotting the result.
 
 \subsection{Motivating Observation}
 \label{sec:bg-repr}
 \label{sec:program-representation}
 
-Under this fixed schedule, execution space selection alone moves runtime by over an order of magnitude, and only 28 of the launched configurations (1.25\%) fall within 10\% of the best. Tile size, block shape, and placement, not the schedule, therefore decide performance here. \autoref{fig:motivation-landscape}(a) shows an irregular, non-convex surface on which \name's analytical selection still lands within 10\% of the measured optimum. \autoref{fig:motivation-landscape}(b) fixes the per-block thread count to \name's choice and isolates the per-thread workload, the number of output elements each thread computes, set by the register-blocking factor (\autoref{sec:abstraction}). With the thread count fixed, a tile still splits across threads in several ways, so this workload stays a free variable; the slice shows it alone moves runtime substantially, making register blocking a first-order decision rather than a residual tie break.
+Under this fixed schedule, execution space selection alone moves runtime by over an order of magnitude, and only 28 of the launched configurations (1.25\%) fall within 10\% of the best. Tile size, block shape, and the backend staging they induce therefore remain consequential even once the schedule is fixed, rather than a residual choice left to a simple heuristic. \autoref{fig:motivation-landscape}(a) shows an irregular, non-convex surface on which \name's analytical selection still lands within 10\% of the measured optimum. \autoref{fig:motivation-landscape}(b) fixes the per-block thread count to \name's choice and isolates the per-thread workload, the number of output elements each thread computes, set by the register-blocking factor (\autoref{sec:abstraction}). With the thread count fixed, a tile still splits across threads in several ways, so this workload stays a free variable; the slice shows it alone moves runtime substantially, making register blocking a first-order decision rather than a residual tie break.
 
 \subsection{GPU-Specific Modeling Challenges}
 \label{sec:bg-challenges}
@@ -42,6 +41,6 @@ Under this fixed schedule, execution space selection alone moves runtime by over
 \label{sec:challenge-discrete-objective}
 \label{sec:challenge-register-pressure}
 
-Analytical execution space optimization must address four GPU-specific challenges. First is an occupancy and register circular dependence: the per-thread register budget depends on the number of resident blocks and threads on an SM, yet the resident-block count itself depends in part on register usage, and an analytical model, unlike a tuner, cannot compile each candidate and read back achieved occupancy. Second, shared memory placement is coupled with tile selection: staging read-only operands cuts global traffic but consumes capacity and may lower the resident-block count, so the best placement depends on tile size, block shape, and reuse pattern and cannot be chosen before them. Third is discrete wave quantization: an SM hosts an integer number of blocks, so a grid executes in a discrete number of waves whose ceiling shifts with tile and placement choices, producing step boundaries that no static linear constraint or smooth objective captures. Finally, register pressure is unknown before code generation, as the exact register count is set by the backend allocator afterward, so a sound model needs a conservative compile-time feasibility filter.
+Analytical execution-space optimization must address four GPU-specific challenges. First, occupancy and register budget form a circular dependence: the per-thread register budget depends on the resident-block count, which itself depends in part on register usage, and an analytical model cannot compile each candidate to read back achieved occupancy. Second, abstract shared-memory placement-scenario reasoning is coupled with tile selection: staging a read-only operand cuts predicted global traffic but consumes capacity and may lower the resident-block count, so modeled scenarios must be evaluated alongside tile size, block shape, and reuse pattern. Third, wave counts are discretely quantized: an SM hosts an integer number of blocks, so a grid executes in a discrete number of waves whose ceiling shifts with tile and scenario choices, producing step boundaries no smooth objective captures. Finally, register pressure is unknown before code generation, since the exact count is set by the backend allocator afterward, so a sound model needs a conservative compile-time feasibility filter.
 
 These four effects are therefore not independent knobs but one coupled feedback loop: footprint, resident blocks, register budget, and wave count move together, so they must be resolved jointly in a single formulation rather than by a sequence of independent heuristics.
