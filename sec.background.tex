@@ -15,7 +15,10 @@ A GPU kernel launches a grid of thread blocks; each block runs on an SM whose re
 %\label{sec:bg-why}
 %\label{sec:execution space-motivation}
 
-\begin{wrapfigure}[25]{R}{0.49\textwidth}
+% Reserve enough wrapped lines for the full caption plus the same clear
+% post-float separation used after Fig. 2; the shorter reservation allowed the
+% following full-width line to intrude into the last caption line.
+\begin{wrapfigure}[26]{R}{0.49\textwidth}
   \centering
   \includegraphics[width=\linewidth]{figure1_main.pdf}
   \caption{GEMM execution space landscape on RTX 4090 under a fixed schedule. (a) Log-ratio runtime for configurations that successfully launch, with measured and predicted optima marked. (b) One-dimensional slice at \name's selected block-thread count, showing measured runtime as a function of the per-thread workload.}

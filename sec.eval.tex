@@ -158,6 +158,26 @@ Across the 25 benchmarks, PPCG's default configuration outperforms 71.2\% of the
 
 The sweep-best configurations achieve a $1.245\times$ geometric-mean speedup over this baseline, and beat it on all 25 benchmarks. \autoref{fig:bounded-ppcg-sweep} compares \name directly with sweep-best. The plotted ratio is \(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\): values above one favor \name and values below one favor sweep-best. The geometric-mean ratio is $0.973\times$, with \name faster on 12 of the 25 benchmarks and sweep-best faster on the remaining 13. Thus, \name reaches comparable aggregate performance without the hundreds of compile-and-run trials required by the bounded search for each benchmark.
 
+\paragraph{Measured regret.}
+The bounded sweep above varies tile sizes while retaining PPCG's block
+mapping. We further evaluate how closely \name's analytical selection
+approaches the best measured configuration when tile sizes and thread-block
+dimensions are considered jointly. We define the measured regret as
+\(T_{\name}/T_{\mathrm{best}}-1\), where \(T_{\mathrm{best}}\) is the fastest
+configuration observed in the evaluated candidate space. For single-kernel
+workloads, we exhaustively search the full feasible tile-and-block
+configuration space to obtain the measured optimum; for multi-kernel
+workloads, we control Cartesian-product growth by retaining the top-8 or
+top-16 candidates per kernel according to analytical cost, limiting the
+resulting joint search space to at most 512 configurations.
+
+The measured regret is \(0.34\%\) for \texttt{trisolv}, \(20.59\%\) for
+\texttt{syrk}, \(8.10\%\) for \texttt{gemm}, approximately \(0\%\) for
+\texttt{atax}, and \(0.08\%\) for \texttt{fdtd-2d}, with a geometric mean
+of \(5.53\%\). The larger regret on \texttt{syrk} indicates
+a remaining mismatch in ranking block-shape and coalescing-sensitive
+configurations.
+
 \subsection{Performance on Deep Learning Operators}
 \label{subsec:operators}
 
@@ -295,18 +315,17 @@ For a direct comparison with optimized reference libraries, \autoref{tab:vendor-
 (\(\dagger\)): \(N=64\), \(C=64\), \(H=W=100\), \(K=32\), \(R=S=3\), and
 \(P=Q=98\), with unit stride.}
 \label{tab:vendor-comparison}
-\small
+\scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \renewcommand{\arraystretch}{1.04}
-\scalebox{0.93}{%
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}llrrrrrr@{}}
 \toprule
-\multirow{2}{*}{\textbf{Kernel}} & \multirow{2}{*}{\textbf{Shape}} &
-  \multicolumn{3}{c}{\textbf{FP64}} &
-  \multicolumn{3}{c}{\textbf{FP32 / TF32}} \\
+\multirow{2}{*}{Kernel} & \multirow{2}{*}{Shape} &
+  \multicolumn{3}{c}{FP64} &
+  \multicolumn{3}{c}{FP32 / TF32} \\
 \cmidrule(lr){3-5}\cmidrule(lr){6-8}
-& & \textbf{Mosaic (ms)} & \textbf{Vendor (ms)} & \textbf{Perf. (\%)}
-  & \textbf{Mosaic (ms)} & \textbf{Vendor (ms)} & \textbf{Perf. (\%)} \\
+& & Mosaic (ms) & Vendor (ms) & Perf. (\%)
+  & Mosaic (ms) & Vendor (ms) & Perf. (\%) \\
 \midrule
 \multirow{6}{*}{GEMM}
 & \(1024\times1024\times1024\) & 2.9062 & 1.9123 & 65.80 & 0.1421 & 0.0369 & 26.00 \\
@@ -314,12 +333,11 @@ For a direct comparison with optimized reference libraries, \autoref{tab:vendor-
 & \(4096\times4096\times4096\) & 167.52 & 113.11 & 67.52 & 6.9988 & 1.7730 & 25.33 \\
 & \(4096\times1024\times4096\) & 42.559 & 30.406 & 71.44 & 1.8401 & 0.4491 & 24.40 \\
 & \(1024\times4096\times4096\) & 44.821 & 29.037 & 64.79 & 1.8609 & 0.4458 & 23.95 \\
-& \textbf{Geometric mean} & -- & -- & \textbf{67.65} & -- & -- & \textbf{24.93} \\
+& Geometric mean & -- & -- & 67.65 & -- & -- & 24.93 \\
 \midrule
 CNN\(^{\dagger}\) & -- & 7.1729 & 7.4175 & 103.4 & 7.9247 & 4.9041 & 61.88 \\
 \bottomrule
 \end{tabular*}
-}
 \end{table}
 
 To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. \name's overhead is a single compile-time analytical solve: for each modeled placement scenario in \(\Sigma\) it assembles one Stage-1 MILP and applies a relaxed-cost tie-break over the Stage-1 optimal discrete configurations (\autoref{sec:solver}), incurred once without generating or running any kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a kernel with NVCC and times it on the GPU, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. Our comparison targets tile/block sizes; even when MetaSchedule is restricted to this choice under a fixed schedule, its overhead stays the same order of magnitude, since the dominant cost is compiling and running each candidate. One two-stage analytical selection pass replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.

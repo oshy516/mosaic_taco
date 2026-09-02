@@ -1,23 +1,33 @@
 %%
 %% Mosaic paper repository main file.
 %%
-\documentclass[acmsmall,screen]{acmart}
+% TACO submission version.  ACM journals use the acmsmall trim; `review'
+% adds the line numbers reviewers are asked to cite, and `anonymous'
+% suppresses author names, affiliations, e-mails, and ORCIDs.
+% For the camera-ready version, drop `review,anonymous' and restore the
+% author block below.
+\documentclass[acmsmall,review,anonymous,screen]{acmart}
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
     Bib\TeX}}}
 
+% ACM is fully open access; TACO articles are published under CC-BY.
 \setcopyright{cc}
 \setcctype{by}
-\copyrightyear{2027}
-\acmYear{2027}
+\copyrightyear{2026}
+\acmYear{2026}
 \acmJournal{TACO}
-\acmVolume{1}
-\acmNumber{1}
-\acmArticle{1}
-\acmMonth{1}
-% Replace the following placeholder with the DOI assigned by ACM.
-\acmDOI{10.1145/XXXXXXX.XXXXXXX}
+% Volume/number/article/month and the DOI are assigned by ACM at
+% acceptance; they stay as placeholders in the submitted version.
+\acmVolume{0}
+\acmNumber{0}
+\acmArticle{0}
+\acmMonth{0}
+\acmDOI{10.1145/nnnnnnn.nnnnnnn}
+% Paste the submission ID issued by Manuscript Central here; it is then
+% printed on every page under the `review' option.
+\acmSubmissionID{}
 
 % User-defined packages.
 \usepackage{xspace}
@@ -140,6 +150,33 @@
 \newcommand{\cfma}{c_{\mathrm{fma}}}
 \newcommand{\creg}{c_{\mathrm{reg}}}
 \newcommand{\Sigmacand}{\Sigma_{\mathrm{cand}}}
+
+% TACO requires an unnumbered footnote on the first page stating the
+% relationship of the submission to any prior conference paper.  acmart's
+% \titlenote and \thanks both replace their argument with a placeholder under
+% the `anonymous' option, so the note is emitted directly instead; it carries
+% no author-identifying information and is therefore safe to keep anonymous.
+\makeatletter
+\newcommand{\firstpagefootnote}[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}%
+  \renewcommand\@makefnmark{}%
+  \footnotetext{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup}
+\makeatother
+
+% Suppress the page-1 copyright/permission footnote block for this
+% submission-stage draft: none of the CC-BY icon+license text, the copyright
+% line, the DOI, or the ACM permission-code/article line it prints are
+% assigned until acceptance, so showing them here would only display
+% placeholders. \setcopyright{cc}/\setcctype{by}/\acmDOI above still record
+% the intended camera-ready values; delete this redefinition (restoring
+% acmart's default \footnotetextcopyrightpermission) once ACM assigns them.
+\makeatletter
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\makeatother
+
 \begin{document}
 
 % Previous title read as a comparative claim against transformation scheduling
@@ -211,6 +248,11 @@ Across 25 PolyBench kernels on three NVIDIA GPUs, \name achieves geometric-mean 
 \keywords{GPU Code Generation, Execution Space Optimization, Analytical Model, Polyhedral Compilation}
 
 \maketitle
+
+% Mandatory TACO first-page footnote.  Replace with a citation of the prior
+% conference paper plus a statement of the >=30% new material if this ever
+% becomes an extension rather than a new paper.
+\firstpagefootnote{New Paper, Not an Extension of a Conference Paper.}
 
 \input{sec.intro}
 \input{sec.background}

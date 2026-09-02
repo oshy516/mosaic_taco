@@ -17,10 +17,9 @@ The shared-memory placement candidates are restricted to read-only references wh
   \caption{Memory-placement rules derived from array access polarity.}
   \label{tab:placement-rules}
   \centering
-  \small
+  \scriptsize
   \setlength{\tabcolsep}{6pt}
   \renewcommand{\arraystretch}{1.10}
-  \scalebox{0.93}{%
   \begin{tabularx}{0.94\textwidth}{@{}
     >{\raggedright\arraybackslash}p{0.30\textwidth}
     >{\raggedright\arraybackslash}X
@@ -40,7 +39,6 @@ The shared-memory placement candidates are restricted to read-only references wh
       placement scenarios, while backend lowering determines concrete staging. \\
     \bottomrule
   \end{tabularx}
-  }
 \end{table}
 
 \autoref{fig:gemm-schedule-metadata} illustrates metadata construction using the default PPCG schedule of the running GEMM example and the dimension sets defined in \autoref{eq:dimension-roles}. In general, \name requires only the categories above; polyhedral compilers expose them through schedule trees and affine access maps, while TVM-style compilers expose them through schedule traces and tensor access metadata.
@@ -103,8 +101,8 @@ The shared-memory placement candidates are restricted to read-only references wh
 \node[
   hdr,
   text width=72mm,
-  fill=color4!30,
-  draw=color4!62!black
+  fill=color3!18,
+  draw=color3!72!black
 ] (src_hdr) at (0,0)
   {Schedule metadata (from any compiler)};
 
@@ -165,8 +163,8 @@ The shared-memory placement candidates are restricted to read-only references wh
 
 \begin{scope}[on background layer]
   \node[
-    draw=color4!55!black,
-    fill=color4!5,
+    draw=color3!72!black,
+    fill=color3!8,
     rounded corners=2pt,
     inner sep=2.6pt,
     fit=(bandone_text)(bandtwo_box)(mapping_text)(access_text)
@@ -175,8 +173,8 @@ The shared-memory placement candidates are restricted to read-only references wh
 
 \node[
   box=72mm,
-  draw=color1!68!black,
-  fill=color2!13,
+  draw=color3!72!black,
+  fill=color3!18,
   anchor=north,
   inner xsep=2.8pt,
   inner ysep=2.5pt
@@ -255,8 +253,8 @@ The shared-memory placement candidates are restricted to read-only references wh
 \node[
   hdr,
   text width=37.5mm,
-  fill=color3!32,
-  draw=color3!68!black,
+  fill=color2!24,
+  draw=color1!66!black,
   anchor=north east
 ] (out_hdr)
   at ([xshift=0mm]src_hdr.east |- lower_top)
@@ -264,8 +262,8 @@ The shared-memory placement candidates are restricted to read-only references wh
 
 \node[
   box=37.5mm,
-  draw=color3!64!black,
-  fill=color2!9,
+  draw=color1!66!black,
+  fill=color2!24,
   anchor=north,
   yshift=-1.0mm,
   minimum height=12.0mm,
@@ -350,10 +348,9 @@ The target description combines hardware constants queried from the device with 
   \caption{Model notation.}
   \label{tab:model-notation}
   \centering
-  \small
+  \scriptsize
   \setlength{\tabcolsep}{4pt}
   \renewcommand{\arraystretch}{1.08}
-  \scalebox{0.93}{%
   \begin{tabularx}{0.9\textwidth}{@{}
     >{\raggedright\arraybackslash}p{0.25\linewidth}
     >{\raggedright\arraybackslash}X
@@ -410,7 +407,6 @@ The target description combines hardware constants queried from the device with 
       conservative register working-set estimate. \\
     \bottomrule
   \end{tabularx}
-  }
 \end{table}
 
 Each \(\Lambda\)-family constant of \autoref{tab:model-notation} is obtained from a dedicated CUDA microbenchmark: a pointer-chasing dependency chain larger than L2 for \(\Lg\), the corresponding shared-memory chain for \(\Ls\), dependent instruction chains for \(\Lr\) and \(\Lf\), and a barrier-only kernel for \(\Ly\). The resulting architecture-specific profile is generated once per GPU and reused across kernels and problem sizes.
