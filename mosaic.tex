@@ -64,7 +64,8 @@
 \usepackage{wrapfig}
 % Apply the layout rhythm after acmart installs its document-level defaults.
 \AtBeginDocument{%
-  \setlength{\intextsep}{8pt plus 2pt minus 2pt}%
+  % Keep wrapped figures the same distance from the body above and below.
+  \setlength{\intextsep}{8pt}%
   \setlength{\textfloatsep}{4pt plus 1pt minus 1pt}%
   \setlength{\floatsep}{8pt plus 2pt minus 2pt}%
   \setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}%
@@ -150,6 +151,9 @@
 \newcommand{\cfma}{c_{\mathrm{fma}}}
 \newcommand{\creg}{c_{\mathrm{reg}}}
 \newcommand{\Sigmacand}{\Sigma_{\mathrm{cand}}}
+% Multi-letter operator name: keep it upright-italic as one token instead of
+% the product b*p*s that a bare `bps' typesets as.
+\newcommand{\bps}{\mathit{bps}}
 
 % TACO requires an unnumbered footnote on the first page stating the
 % relationship of the submission to any prior conference paper.  acmart's

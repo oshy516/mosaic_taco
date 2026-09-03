@@ -2,7 +2,7 @@
 \section{Overview of \name}
 \label{sec:overview}
 
-\name treats the transformed program as the boundary between transformation scheduling and execution-space optimization: existing schedulers fix the legal computation order and mapping structure, and \name selects only the tile sizes \(\tvec\) and thread-block dimensions \(\mathbf{b}\) that this structure leaves open while reasoning over abstract shared-memory placement scenarios \(S\) and accounting for occupancy and register pressure. Throughout, \name operates outside the compiler; the backend is driven as a black box and all resource reasoning happens in \name. As summarized in \autoref{fig:mosaic-pipeline}, the workflow comprises four components:
+\name treats the transformed program as the boundary between transformation scheduling and execution-space optimization: existing schedulers fix the legal computation order and mapping structure, and \name selects only the tile sizes \(\tvec\) and thread-block dimensions \(\mathbf{b}\) that this structure leaves open, reasoning over abstract shared-memory placement scenarios \(S\). Throughout, \name operates outside the compiler; the backend is driven as a black box and all resource reasoning happens in \name. As summarized in \autoref{fig:mosaic-pipeline}, the workflow comprises four components:
 
 % Required in the preamble:
 % \usepackage{tikz}
@@ -345,26 +345,19 @@ evaluates abstract placement scenarios.
   parsep=0pt
 ]
   \item \textbf{Transformed-program acquisition}. \name starts from a program whose schedule and mapping structure are already fixed by an external compiler; the schedule tree or trace stays read-only, and \name assigns only the tile sizes and thread-block dimensions this structure exposes.
-  \item \textbf{Metadata extraction and target profiling}. \name extracts metadata for loops, accesses, operations, coalescing, and placement candidates, then combines it with once-per-architecture target limits and effective costs, yielding the finite execution space problem instantiated in \autoref{sec:model}.
+  \item \textbf{Metadata extraction and target profiling}. \name extracts metadata for loops, accesses, operations, coalescing, and placement candidates, then combines it with once-per-architecture target limits and effective costs, yielding the finite execution-space problem instantiated in \autoref{sec:model}.
   \item \textbf{Analytical execution-space solving}. \name enumerates abstract shared-memory placement scenarios for read-only operands and, for each scenario, solves over tile sizes and thread-block dimensions; feasibility is checked by hardware limits and the conservative register filter, and ranking uses a quantized primary objective with a relaxed-cost tie-break over the Stage-1 optimal discrete configurations.
-  \item \textbf{Backend realization}. \name returns the selected tile sizes and thread-block dimensions; the best modeled placement scenario remains analytical state rather than being emitted as a shared-memory directive. The compiler-specific adapter passes the supported parameters to PPCG or TVM, whose existing lowering independently determines and realizes any shared-memory staging, cooperative loads, and barriers before emitting GPU code; \name acts only as an external parameter oracle.
+  \item \textbf{Backend realization}. \name returns the selected tile sizes and thread-block dimensions; the best modeled placement scenario remains analytical state rather than being emitted as a shared-memory directive. Enumerating it still pays: on top of the register filter it raises the geometric-mean speedup from \(1.32\times\) to \(1.79\times\) over the same baseline (\autoref{subsec:ablation}). The compiler-specific adapter passes the supported parameters to PPCG or TVM, whose existing lowering independently determines and realizes any shared-memory staging, cooperative loads, and barriers before emitting GPU code; \name acts only as an external parameter oracle.
 \end{itemize}
 \endgroup
 
 For each modeled placement scenario \(S\), let \(F^*(S)\), \(\Phi^*(S)\), and \((\tvec_S^*,\mathbf{b}_S^*)\) denote the scores and configuration returned by the inner two-stage solve over \(\mathcal{V}(S)\), formally defined in \autoref{sec:two-stage-solver}.
 \begin{equation}
-\begin{aligned}
-\mathcal{S}_1
-&=\mathop{\arg\min}_{S\in\Sigma} F^*(S),\\
-S^*
-&\in \mathop{\arg\min}_{S\in\mathcal{S}_1} \Phi^*(S),\\
-(\tvec^*,\mathbf{b}^*)
-&=(\tvec_{S^*}^*,\mathbf{b}_{S^*}^*).
-\end{aligned}
+\mathcal{S}_1=\mathop{\arg\min}_{S\in\Sigma} F^*(S),\qquad
+S^*\in \mathop{\arg\min}_{S\in\mathcal{S}_1} \Phi^*(S),\qquad
+(\tvec^*,\mathbf{b}^*)=(\tvec_{S^*}^*,\mathbf{b}_{S^*}^*).
 \label{eq:two-level}
 \end{equation}
 Here \(S\) ranges over the power set \(\Sigma=2^{\Sigma_{\mathit{cand}}}\) of read-only placement candidates. For each \(S\), the inner solve ranges over the placement-dependent feasible domain \(\mathcal{V}(S)\): Stage 1 produces \(F^*(S)\) and its tied optimal set, and Stage 2 uses \(\Phi^*(S)\) only to resolve those ties. Across modeled placement scenarios, the primary scores are compared first and the secondary scores only on a tie. \autoref{sec:two-stage-solver} gives the complete definitions. %\autoref{sec:metadata} describes the metadata and target profile that instantiate \autoref{eq:two-level}; \autoref{sec:model} formalizes the cost model, constraints, and solver.
 
-For the running GEMM example, \name identifies the two parallel loops and the single reduction loop, treats \(A\) and \(B\) as read-only operands and \(C\) as a register accumulator, enumerates the induced placement scenarios, solves for tile and block choices, and returns those selected parameters as backend configuration.
-
-\name is realized as a compiler-agnostic analytical core with compiler-specific metadata adapters; it runs the analytical selection of \autoref{sec:model} outside the compiler and returns the chosen tile and block configuration as code generation parameters. It treats the schedule as an abstraction layer, extracting only the loop flags, affine access maps, tile footprints, read/write polarities, and operation counts the model requires (\autoref{sec:compile-time-metadata}); the same engine drives both backends, reading schedule trees from PPCG and schedule traces from TVM. For every placement scenario it assembles the Stage-1 MILP, solved with PuLP~\cite{pulp} and the CBC backend~\cite{cbc}, and applies the relaxed-cost tie-break only to the Stage-1 optimal discrete configurations; modeled scenarios are ranked by the primary score first and the secondary score only on a tie. Capacity parameters come from device properties, and effective constants come from the microbenchmarks of \autoref{sec:gpu-target-profiling}; the backend independently determines concrete shared-memory staging through its own lowering mechanism.
+\name is realized as a compiler-agnostic analytical core with compiler-specific metadata adapters, running the analytical selection of \autoref{sec:model} outside the compiler and returning the chosen tile and block configuration as code generation parameters; the same engine reads schedule trees from PPCG and schedule traces from TVM. For every placement scenario it assembles the Stage-1 MILP, in which the footprint and wave-count products over the discrete tile and block choices are linearized with one-hot indicators (\autoref{sec:solver}), solves it with PuLP~\cite{pulp} and the CBC backend~\cite{cbc}, and applies the relaxed-cost tie-break only to the Stage-1 optimal discrete configurations. Capacity parameters come from device properties and effective constants from the microbenchmarks of \autoref{sec:gpu-target-profiling}. For the running GEMM example this returns \(\tile_i,\tile_j,\tile_k\) and \(b_i,b_j\); \autoref{sec:metadata} and \autoref{sec:model} follow that example through metadata extraction and solving.

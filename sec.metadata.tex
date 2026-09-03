@@ -56,8 +56,7 @@ The shared-memory placement candidates are restricted to read-only references wh
 \definecolor{color4}{RGB}{147,197,235}
 \definecolor{color5}{RGB}{157,159,163}
 
-% The wrap spans the Sec. 4.2 heading, whose vertical skip is not counted as a
-% text line by wrapfig.  Match the post-figure spacing used by Fig. 1.
+% Match Fig. 1's half-text-width wrapped layout and equal 8pt clearance.
 \begin{wrapfigure}[22]{r}{0.49\textwidth}
 \centering
 % \setlength{\abovecaptionskip}{10pt}
@@ -342,7 +341,7 @@ In this example, the dimension sets defined in \autoref{eq:dimension-roles} give
 \subsection{GPU Target Profiling}
 \label{sec:gpu-target-profiling}
 
-The target description combines hardware constants queried from the device with effective costs measured once per architecture and reused across all kernels for that target. The hardware constants, including SM count, warp size, resident block and thread limits, shared memory capacities, register-file size, and block-size limit (\autoref{tab:model-notation}), bound the resident-block count, occupancy, and feasible domain. The effective costs, the \(\Lambda\)-family constants of \autoref{tab:model-notation}, come from targeted microbenchmarks and enter the matching terms of \(T_{\mathit{block}}\). They serve relative ranking and analytical selection, not cycle-accurate prediction; the model captures the resource interactions that shape the execution space landscape and leaves backend scheduling, caching, and pipeline overlap as lower-level effects.
+The target description combines hardware constants queried from the device with effective costs measured once per architecture and reused across all kernels for that target. The hardware constants, including SM count, warp size, resident block and thread limits, shared memory capacities, register-file size, and block-size limit (\autoref{tab:model-notation}), bound the resident-block count, occupancy, and feasible domain. The effective costs, the \(\Lambda\)-family constants of \autoref{tab:model-notation}, come from targeted microbenchmarks and enter the matching terms of \(T_{\mathit{block}}\). They serve relative ranking and analytical selection, not cycle-accurate prediction; the model captures the resource interactions that shape the execution-space landscape and leaves backend scheduling, caching, and pipeline overlap as lower-level effects.
 
 \begin{table}[tbp]
   \caption{Model notation.}
@@ -390,9 +389,9 @@ The target description combines hardware constants queried from the device with 
     \addlinespace[1pt]
     \(\rblk_d,\ \work\) & Register-blocking factor \(\rblk_d=\tile_d/b_d\) and
                            per-thread output count \(\work=\prod_{d\in\mathcal{P}}\rblk_d\). \\
-    \(\phi_{\square}\) &
+    \(\phi_{m}\) &
       Reads-per-FMA ratio for placement class
-      \(\square\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
+      \(m\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
       links register blocking to memory traffic in \(T_{\mathit{compute}}\). \\
     \(\rho_{\mathrm{reg}},\ \creg\) &
       Modeled register accesses per reduction-body evaluation;
@@ -402,7 +401,7 @@ The target description combines hardware constants queried from the device with 
     \(K_{\mathit{outer}}\) &
       Cooperative load rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\)
       over tiled reduction dimensions. \\
-    \(bps,\ R_{\mathit{avail}},\ \hat{R}\) &
+    \(\bps,\ R_{\mathit{avail}},\ \hat{R}\) &
       Resident blocks per SM; available registers per thread;
       conservative register working-set estimate. \\
     \bottomrule
