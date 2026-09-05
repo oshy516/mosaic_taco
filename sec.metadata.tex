@@ -9,12 +9,12 @@
 
 The transformed representation exposes the loop order and mapping decisions the upstream compiler already made, so \name selects only execution-space parameters exposed by that fixed schedule without redoing either decision.
 
-The metadata falls into several groups tied to the model: loop structure drives candidate generation, array metadata drives traffic and placement-scenario construction, statement metadata drives compute and synchronization cost, and compiler-provided GPU mapping metadata closes the occupancy and register loop. Loop structure records dimension names, bounds, schedule order, and step sizes; with \(N_d\) the extent of dimension \(d\), these define the tile and block candidate sets. Dimension annotations record permutable and coincident (parallelizable) dimensions, from which \name classifies each loop as parallel (\(\mathcal{P}\), already mapped to independent blocks/threads), reduction (\(\mathcal{R}\), absent from every write footprint), or serial (\(\mathcal{D}\), neither of the former; formal definition in \autoref{eq:dimension-roles}). Array metadata records affine accesses, read/write polarity, layout, coalescing direction, and tile footprints, determining traffic, shared-memory capacity, accumulator treatment, and staging candidates; statement metadata records arithmetic counts, memory-reference counts, and synchronization sites, instantiating compute and barrier costs; and GPU mapping metadata records the fixed block/thread mapping, staging candidates, induced register-blocking factors \(\rblk_d=\tile_d/b_d\), and coalescing.
+The metadata falls into several groups tied to the model: loop structure drives candidate generation, array metadata drives traffic and placement-scenario construction, statement metadata drives compute and synchronization cost, and compiler-provided GPU mapping metadata closes the occupancy and register loop. Loop structure records dimension names, bounds, schedule order, and step sizes; with \(N_d\) the extent of dimension \(d\), these define the tile and block candidate sets. Dimension annotations record permutable and coincident (parallelizable) dimensions, from which \name classifies each loop as parallel (\(\mathcal{P}\), already mapped to independent blocks/threads), reduction (\(\mathcal{R}\), absent from every write footprint), or serial (\(\mathcal{D}\), neither of the former; formal definition in \autoref{eq:dimension-roles}). Array metadata records affine accesses, read and write access modes, layout, coalescing direction, and tile footprints, determining traffic, shared-memory capacity, accumulator treatment, and staging candidates; statement metadata records arithmetic counts, memory-reference counts, and synchronization sites, instantiating compute and barrier costs; and GPU mapping metadata records the fixed block/thread mapping, staging candidates, induced register-blocking factors \(\rblk_d=\tile_d/b_d\), and coalescing.
 
 The shared-memory placement candidates are restricted to read-only references whose tile footprints are functions of the candidate tile sizes; \autoref{tab:placement-rules} assigns every other reference a fixed abstract memory space. The model treats \(S\) only as an abstract placement scenario: it affects the predicted shared-memory footprint, memory traffic, occupancy constraints, register feasibility, and objective cost. The best modeled scenario informs the selected tile sizes and thread-block dimensions, but PPCG or TVM independently determines concrete shared-memory staging through its existing lowering mechanism; \name does not prescribe or emit staging instructions. This restriction keeps the outer enumeration small while retaining the scenarios that materially affect reuse and resource feasibility.
 
 \begin{table}[tbp]
-  \caption{Memory-placement rules derived from array access polarity.}
+  \caption{Memory-placement rules derived from how each array is accessed.}
   \label{tab:placement-rules}
   \centering
   \scriptsize
@@ -359,7 +359,8 @@ The target description combines hardware constants queried from the device with 
     \midrule
     \multicolumn{2}{@{}l@{}}{\textbf{Optimization variables}} \\
     \addlinespace[1pt]
-    \(\tile_d,\ b_d\) & Tile size and thread-block size for dimension~\(d\). \\
+    \(\tile_d,\ b_d\) & Tile size and thread-block size for dimension~\(d\),
+                           whose loop extent is \(N_d\). \\
     \addlinespace[2pt]
     \midrule
     \addlinespace[2pt]
@@ -373,8 +374,9 @@ The target description combines hardware constants queried from the device with 
     \multicolumn{2}{@{}l@{}}{\textbf{Architecture constants}\quad
       \textit{(queried or profiled once per GPU)}} \\
     \addlinespace[1pt]
-    \(\Nsm,\Bsm,\Tsm,\Tmax\) &
-      SM count; max resident blocks and threads per SM; max threads per block. \\
+    \(\Nsm,\Bsm,\Tsm,\Tmax,\Wwarp\) &
+      SM count; max resident blocks and threads per SM; max threads per block;
+      warp size. \\
     \(\Ssm,\Sblock,\Rsm\) &
       Per-SM and per-block shared memory capacity; SM register-file size. \\
     \(\Lg,\Ls,\Lf,\Ly\) &
@@ -393,17 +395,26 @@ The target description combines hardware constants queried from the device with 
       Reads-per-FMA ratio for placement class
       \(m\!\in\!\{\mathit{smem},\mathit{gmem}\}\);
       links register blocking to memory traffic in \(T_{\mathit{compute}}\). \\
-    \(\rho_{\mathrm{reg}},\ \creg\) &
-      Modeled register accesses per reduction-body evaluation;
-      \(\creg=\rho_{\mathrm{reg}}\Lr\). \\
+    \(\rho_{\mathrm{reg}},\ \creg,\ \cfma\) &
+      Modeled register accesses per reduction-body evaluation,
+      \(\creg=\rho_{\mathrm{reg}}\Lr\), and the per-evaluation cost \(\cfma\)
+      of \autoref{eq:block-terms}. \\
     \(\operatorname{smem}(\tvec;S),\ |A|_{\tvec}\) &
       Shared-memory footprint and operand tile footprint. \\
-    \(K_{\mathit{outer}}\) &
-      Cooperative load rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\)
-      over tiled reduction dimensions. \\
-    \(\bps,\ R_{\mathit{avail}},\ \hat{R}\) &
-      Resident blocks per SM; available registers per thread;
-      conservative register working-set estimate. \\
+    \(K_{\mathit{total}},\ K_{\mathit{outer}}\) &
+      Reduction work per output \(\prod_{r\in\mathcal{R}}N_r\); cooperative load
+      rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\). \\
+    \(n_{\mathit{op}}(s)\) &
+      Operation count of statement \(s\) in the statement metadata. \\
+    \(N_{\mathit{blocks}},\ C_{\mathit{blocks}}\) &
+      Grid size and blocks resident across all SMs; their ratio, rounded up,
+      is the wave count. \\
+    \(\bps,\ R_{\mathit{avail}}\) &
+      Resident blocks per SM; registers per thread the residency estimate
+      leaves available. \\
+    \(\hat{R},\ \Czero\) &
+      Lower bound on the per-thread register working set, and the control and
+      addressing registers live throughout the kernel. \\
     \bottomrule
   \end{tabularx}
 \end{table}

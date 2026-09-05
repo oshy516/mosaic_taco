@@ -47,10 +47,10 @@ C_d
   \cup \{v \mid v \text{ divides } N_d\}.
 \label{eq:tile-candidates}
 \end{equation}
-\name uses powers of two and exact divisors to keep the analytical candidate space bounded. Powers of two provide hardware-aligned choices, while exact divisors avoid boundary remainders. We do not assume that other tile sizes are inherently inferior; \autoref{subsec:bounded-ppcg-sweep} evaluates a broader empirical space including unaligned and non-divisor configurations to quantify the performance opportunity outside this analytical candidate set. For each \(\tile_d\in C_d\), block candidates are restricted to divisors of \(\tile_d\), keeping
+\name uses powers of two and exact divisors to keep the analytical candidate space bounded: powers of two match the warp and transaction granularities, and exact divisors avoid partial tiles. \autoref{subsec:bounded-ppcg-sweep} measures what lies outside this set, sweeping unaligned and non-divisor configurations as well. For each \(\tile_d\in C_d\), block candidates are restricted to divisors of \(\tile_d\), keeping
 \(\rblk_d=\tile_d/b_d\) integral; hardware limits are imposed later.
 
-Each array is assigned a memory space from its read/write polarity
+Each array is assigned a memory space from whether it is read-only, written, or accumulated
 (\autoref{tab:placement-rules}). Read-only operands form
 \(\Sigma_{\mathit{cand}}\), and \name enumerates
 \(\Sigma=2^{\Sigma_{\mathit{cand}}}\) during solving of
@@ -79,7 +79,7 @@ For the GEMM example with both operands staged (\(\mathcal{P}=\{i,j\}\), \(\math
 \label{sec:constraints}
 \label{sec:register-filter}
 
-The inner feasible domain \(\mathcal{V}(S)\) is the set of tile/block choices that, for a fixed modeled placement scenario \(S\), satisfy every launch and resource constraint; it is the domain over which the inner objective (\autoref{eq:model-summary}) is minimized, after which the outer loop compares the optima across modeled scenarios (\autoref{eq:two-level}). It collects launch limits and pruning rules:
+For a fixed modeled placement scenario \(S\), the inner feasible domain \(\mathcal{V}(S)\) collects the tile/block choices that satisfy every launch and resource constraint. It is the domain over which the inner objective (\autoref{eq:model-summary}) is minimized; the outer loop then compares the optima across modeled scenarios (\autoref{eq:two-level}). It collects launch limits and pruning rules:
 \begin{equation}
 \begin{gathered}
 \mathcal{V}(S)
@@ -95,7 +95,7 @@ The inner feasible domain \(\mathcal{V}(S)\) is the set of tile/block choices th
 \end{gathered}
 \label{eq:feasible-domain}
 \end{equation}
-C1 and C2 enforce block-size legality and useful parallelism; C3 bounds placement-dependent shared memory; C4 is the conservative register filter.
+C1 and C2 enforce block-size legality and useful parallelism; C3 bounds placement-dependent shared memory; C4 is the register consistency filter.
 
 The register filter breaks the occupancy and register circular dependence by ordering the quantities in one direction; the symbols used below are summarized in \autoref{tab:model-notation}. First, \name ignores the register constraint and computes a pre-register resident-block bound from the block limit, thread limit, and shared memory usage. This gives \(\bps\). Second, \(\bps\) and the number of threads per block determine the available register budget per thread, \(R_{\mathit{avail}}\). Third, a conservative working set estimate \(\hat{R}\) is checked against that budget:
 \begingroup
@@ -124,7 +124,7 @@ R^{\mathit{live}}_{\mathit{in}}
 \label{eq:resident-blocks}
 \end{equation}
 \endgroup
-When \(\operatorname{smem}(\tvec;S)=0\), the shared memory ceiling in \(\bps\) is omitted. The offset \(\Czero\) counts the control and addressing registers that stay live throughout the kernel, namely the reduction loop counters and the shared and global base pointers. Its value is fixed once the loop nest and modeled placement scenario are known and does not vary with the tile or block choice, so the solver treats it as a constant. \(\hat R\) is a lower bound on what a thread needs, since the counted values are simultaneously live, and \(R_{\mathit{avail}}\) is the budget implied by \(\bps\), which was computed without the register constraint and therefore overestimates residency. C4 keeps the two consistent: a configuration that violates it cannot sustain the \(\bps\) resident blocks the wave count of \autoref{eq:model-summary} assumes, so \name discards it instead of scoring it with an optimistic wave count. C4 is a consistency filter, not a prediction of backend allocation: it neither rules out running the configuration at lower occupancy nor guarantees spill-free code. \autoref{sec:eval} reports the register and occupancy behavior of the selected configurations after compilation.
+When \(\operatorname{smem}(\tvec;S)=0\), the shared memory ceiling in \(\bps\) is omitted. The offset \(\Czero\) counts the control and addressing registers that stay live throughout the kernel, namely the reduction loop counters and the shared and global base pointers. Its value is fixed once the loop nest and modeled placement scenario are known and does not vary with the tile or block choice, so the solver treats it as a constant. \(\hat R\) is a lower bound on what a thread needs, since the counted values are simultaneously live, and \(R_{\mathit{avail}}\) is the budget implied by \(\bps\), which was computed without the register constraint and therefore overestimates residency. C4 keeps the two consistent: a configuration that violates it cannot sustain the \(\bps\) resident blocks the wave count of \autoref{eq:model-summary} assumes, so \name discards it instead of scoring it with an optimistic wave count. C4 therefore restricts the search to configurations that can hold the residency their own cost assumes. It is not a prediction of what the allocator will do, which \autoref{sec:eval} measures after compilation.
 
 For the GEMM feasibility example with modeled scenario \(S=\{A,B\}\), tile sizes
 \(\tile_i,\tile_j,\tile_k\), and
@@ -249,7 +249,7 @@ T_{\mathit{compute}} &= \rblk_i\rblk_j
    \right).
 \end{aligned}
 \]
-For GEMM, \(s_{\mathit{out}}=S_0\) and \(s_{\mathit{red}}=S_1\). The scaling statement \(S_0\) contributes \(n_{\mathit{op}}(S_0)=1\) once per output, the leading \(\rblk_i\rblk_j\Lf\) term of \(T_{\mathit{compute}}\) that carries no \(N_k\) factor, and the update statement \(S_1\) contributes \(n_{\mathit{op}}(S_1)=3\) per reduction step, the \(\rblk_i\rblk_jN_k\) term. Both terms belong to \(T_{\mathit{compute}}\) and hence to \(T_{\mathit{block}}\); \(T_{\mathit{init}}\) is separate, charging only the accumulator-register initialization (one register write per output at \(\Lr\)), not the \(\beta\)-scaling arithmetic of \(S_0\), which is already counted as \(s_{\mathit{out}}\) in \(T_{\mathit{compute}}\). Multiplying \(T_{\mathit{block}}\) by the wave ceiling of \autoref{eq:discrete-wave} adds the discontinuity seen in \autoref{fig:motivation-landscape}.
+For GEMM, \(s_{\mathit{out}}=S_0\) and \(s_{\mathit{red}}=S_1\), so \(T_{\mathit{compute}}\) has two summands. The scaling statement \(S_0\) runs once per output with \(n_{\mathit{op}}(S_0)=1\), giving \(\work\Lf=\rblk_i\rblk_j\Lf\), the product of the \(\rblk_i\rblk_j\) outputs a thread owns and the cost of one operation; it carries no \(N_k\) factor. The update statement \(S_1\) runs once per reduction step with \(n_{\mathit{op}}(S_1)=3\), giving \(\work K_{\mathit{total}}\cfma=\rblk_i\rblk_jN_k\cfma\), where \(\rblk_i\rblk_jN_k\) is the number of reduction-body evaluations that thread performs. \(T_{\mathit{init}}\) is separate, charging only the accumulator-register initialization (one register write per output at \(\Lr\)), not the \(\beta\)-scaling arithmetic of \(S_0\), which is already counted as \(s_{\mathit{out}}\) in \(T_{\mathit{compute}}\). Multiplying \(T_{\mathit{block}}\) by the wave ceiling of \autoref{eq:discrete-wave} adds the discontinuity seen in \autoref{fig:motivation-landscape}.
 
 \subsection{Solving Procedure}
 \label{sec:solver}
@@ -324,6 +324,6 @@ S^*\in \mathop{\arg\min}_{S\in\Sigma}^{\mathrm{lex}}
 \end{equation}
 Modeled placement scenarios are therefore compared first by \(F^*(S)\), with \(\Phi^*(S)\) used only when the primary costs tie. For programs representable by the metadata of \autoref{sec:metadata}, the scenario set stays small.
 
-The construction of \autoref{sec:abstraction} through \autoref{sec:solver} is kernel-independent: dimension classification, candidate generation, feasibility, and the wave objective take the same form for every class. Only the closed form of \(\phi_{\mathit{smem}}\) varies with the reuse pattern, the omitted-dimension form for contractions versus the halo-amortization form of \autoref{eq:stencil-halo} for stencils, with \name selecting between them from the access footprints; in the stencil case \(\phi_{\mathit{smem}}\) becomes a product of sums, so the interior AM-GM optimum no longer applies and \name evaluates all candidates.
+The construction of \autoref{sec:abstraction} through \autoref{sec:solver} is kernel-independent: dimension classification, candidate generation, feasibility, and the wave objective take the same form for every class. Only the closed form of \(\phi_{\mathit{smem}}\) varies with the reuse pattern: the omitted-dimension form for contractions, or the halo-amortization form of \autoref{eq:stencil-halo} for stencils. \name selects between them from the access footprints. In the stencil case \(\phi_{\mathit{smem}}\) becomes a product of sums, so the interior AM-GM optimum no longer applies and \name evaluates all candidates.
 
-Tracing this end to end on the running GEMM example (\autoref{sec:metadata}\textendash\autoref{sec:solver}): profiled hardware constants and extracted schedule metadata instantiate \(\mathcal{V}(S)\) and the quantized objective for every \(S\in\Sigma\); the two-stage selection returns \((\tvec^*,\mathbf{b}^*,S^*)\), where \(S^*\) remains modeled analytical state, and only \(\tvec^*\) and \(\mathbf{b}^*\) are written back as backend configuration, with no candidate kernel generated or evaluated.
+Tracing this end to end on the running GEMM example (\autoref{sec:metadata}\textendash\autoref{sec:solver}), profiled hardware constants and extracted schedule metadata instantiate \(\mathcal{V}(S)\) and the quantized objective for every \(S\in\Sigma\). The two-stage selection then returns \((\tvec^*,\mathbf{b}^*,S^*)\). Only \(\tvec^*\) and \(\mathbf{b}^*\) are written back as backend configuration, \(S^*\) remains modeled analytical state, and no candidate kernel is generated or evaluated.
