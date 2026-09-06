@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{45}
+\begin{thebibliography}{46}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -39,14 +39,8 @@
 
 \bibitem[Abdelaal and Kong(2021)]%
         {ppcg-tss}
-\bibfield{author}{\bibinfo{person}{Khaled Abdelaal} {and}
-  \bibinfo{person}{Martin Kong}.} \bibinfo{year}{2021}\natexlab{}.
-\newblock \showarticletitle{Tile size selection of affine programs for GPGPUs
-  using polyhedral cross-compilation}. In \bibinfo{booktitle}{\emph{Proceedings
-  of the 35th ACM International Conference on Supercomputing}} (Virtual Event,
-  USA) \emph{(\bibinfo{series}{ICS '21})}. \bibinfo{publisher}{Association for
-  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
-  \bibinfo{pages}{13–26}.
+\bibfield{author}{\bibinfo{person}{Khaled Abdelaal} {and} \bibinfo{person}{Martin Kong}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Tile size selection of affine programs for GPGPUs using polyhedral cross-compilation}. In \bibinfo{booktitle}{\emph{Proceedings of the 35th ACM International Conference on Supercomputing}} (Virtual Event, USA) \emph{(\bibinfo{series}{ICS '21})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{13–26}.
 \newblock
 \showISBNx{9781450383356}
 \urldef\tempurl%
@@ -56,17 +50,8 @@
 
 \bibitem[Ansel et~al\mbox{.}(2014)]%
         {opentuner}
-\bibfield{author}{\bibinfo{person}{Jason Ansel}, \bibinfo{person}{Shoaib
-  Kamil}, \bibinfo{person}{Kalyan Veeramachaneni}, \bibinfo{person}{Jonathan
-  Ragan-Kelley}, \bibinfo{person}{Jeffrey Bosboom}, \bibinfo{person}{Una-May
-  O'Reilly}, {and} \bibinfo{person}{Saman Amarasinghe}.}
-  \bibinfo{year}{2014}\natexlab{}.
-\newblock \showarticletitle{OpenTuner: An Extensible Framework for Program
-  Autotuning}. In \bibinfo{booktitle}{\emph{Proceedings of the 23rd
-  International Conference on Parallel Architectures and Compilation}}
-  (Edmonton, AB, Canada) \emph{(\bibinfo{series}{PACT '14})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{303--316}.
+\bibfield{author}{\bibinfo{person}{Jason Ansel}, \bibinfo{person}{Shoaib Kamil}, \bibinfo{person}{Kalyan Veeramachaneni}, \bibinfo{person}{Jonathan Ragan-Kelley}, \bibinfo{person}{Jeffrey Bosboom}, \bibinfo{person}{Una-May O'Reilly}, {and} \bibinfo{person}{Saman Amarasinghe}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{OpenTuner: An Extensible Framework for Program Autotuning}. In \bibinfo{booktitle}{\emph{Proceedings of the 23rd International Conference on Parallel Architectures and Compilation}} (Edmonton, AB, Canada) \emph{(\bibinfo{series}{PACT '14})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{303--316}.
 \newblock
 \showISBNx{9781450328003}
 \urldef\tempurl%
@@ -76,15 +61,8 @@
 
 \bibitem[Babalad et~al\mbox{.}(2024)]%
         {hctuner}
-\bibfield{author}{\bibinfo{person}{Shilpa Babalad}, \bibinfo{person}{Shirish
-  Shevade}, \bibinfo{person}{Matthew~Jacob Thazhuthaveetil}, {and}
-  \bibinfo{person}{R Govindarajan}.} \bibinfo{year}{2024}\natexlab{}.
-\newblock \showarticletitle{Tile Size and Loop Order Selection using Machine
-  Learning for Multi-/Many-Core Architectures}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 38th ACM International
-  Conference on Supercomputing}} (Kyoto, Japan) \emph{(\bibinfo{series}{ICS
-  '24})}. \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{388–399}.
+\bibfield{author}{\bibinfo{person}{Shilpa Babalad}, \bibinfo{person}{Shirish Shevade}, \bibinfo{person}{Matthew~Jacob Thazhuthaveetil}, {and} \bibinfo{person}{R Govindarajan}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Tile Size and Loop Order Selection using Machine Learning for Multi-/Many-Core Architectures}. In \bibinfo{booktitle}{\emph{Proceedings of the 38th ACM International Conference on Supercomputing}} (Kyoto, Japan) \emph{(\bibinfo{series}{ICS '24})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{388–399}.
 \newblock
 \showISBNx{9798400706103}
 \urldef\tempurl%
@@ -94,15 +72,8 @@
 
 \bibitem[Bilmes et~al\mbox{.}(1997)]%
         {phipac}
-\bibfield{author}{\bibinfo{person}{Jeff Bilmes}, \bibinfo{person}{Krste
-  Asanovic}, \bibinfo{person}{Chee-Whye Chin}, {and} \bibinfo{person}{Jim
-  Demmel}.} \bibinfo{year}{1997}\natexlab{}.
-\newblock \showarticletitle{Optimizing matrix multiply using PHiPAC: a
-  portable, high-performance, ANSI C coding methodology}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 11th International Conference on
-  Supercomputing}} (Vienna, Austria) \emph{(\bibinfo{series}{ICS '97})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{340–347}.
+\bibfield{author}{\bibinfo{person}{Jeff Bilmes}, \bibinfo{person}{Krste Asanovic}, \bibinfo{person}{Chee-Whye Chin}, {and} \bibinfo{person}{Jim Demmel}.} \bibinfo{year}{1997}\natexlab{}.
+\newblock \showarticletitle{Optimizing matrix multiply using PHiPAC: a portable, high-performance, ANSI C coding methodology}. In \bibinfo{booktitle}{\emph{Proceedings of the 11th International Conference on Supercomputing}} (Vienna, Austria) \emph{(\bibinfo{series}{ICS '97})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{340–347}.
 \newblock
 \showISBNx{0897919025}
 \urldef\tempurl%
@@ -112,14 +83,9 @@
 
 \bibitem[Bondhugula et~al\mbox{.}(2017)]%
         {diamond}
-\bibfield{author}{\bibinfo{person}{Uday Bondhugula}, \bibinfo{person}{Vinayaka
-  Bandishti}, {and} \bibinfo{person}{Irshad Pananilath}.}
-  \bibinfo{year}{2017}\natexlab{}.
-\newblock \showarticletitle{Diamond tiling: Tiling Techniques to Maximize
-  Parallelism for Stencil Computations}.
-\newblock \bibinfo{journal}{\emph{IEEE Transactions on Parallel and Distributed
-  Systems}} \bibinfo{volume}{28}, \bibinfo{number}{5} (\bibinfo{date}{Oct.}
-  \bibinfo{year}{2017}), \bibinfo{pages}{1285--1298}.
+\bibfield{author}{\bibinfo{person}{Uday Bondhugula}, \bibinfo{person}{Vinayaka Bandishti}, {and} \bibinfo{person}{Irshad Pananilath}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Diamond tiling: Tiling Techniques to Maximize Parallelism for Stencil Computations}.
+\newblock \bibinfo{journal}{\emph{IEEE Transactions on Parallel and Distributed Systems}} \bibinfo{volume}{28}, \bibinfo{number}{5} (\bibinfo{date}{Oct.} \bibinfo{year}{2017}), \bibinfo{pages}{1285--1298}.
 \newblock
 \showISSN{1045-9219}
 \urldef\tempurl%
@@ -129,15 +95,8 @@
 
 \bibitem[Bondhugula et~al\mbox{.}(2008)]%
         {pluto}
-\bibfield{author}{\bibinfo{person}{Uday Bondhugula}, \bibinfo{person}{Albert
-  Hartono}, \bibinfo{person}{J. Ramanujam}, {and} \bibinfo{person}{P.
-  Sadayappan}.} \bibinfo{year}{2008}\natexlab{}.
-\newblock \showarticletitle{A practical automatic polyhedral parallelizer and
-  locality optimizer}. In \bibinfo{booktitle}{\emph{Proceedings of the 29th ACM
-  SIGPLAN Conference on Programming Language Design and Implementation}}
-  (Tucson, AZ, USA) \emph{(\bibinfo{series}{PLDI '08})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{101–113}.
+\bibfield{author}{\bibinfo{person}{Uday Bondhugula}, \bibinfo{person}{Albert Hartono}, \bibinfo{person}{J. Ramanujam}, {and} \bibinfo{person}{P. Sadayappan}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{A practical automatic polyhedral parallelizer and locality optimizer}. In \bibinfo{booktitle}{\emph{Proceedings of the 29th ACM SIGPLAN Conference on Programming Language Design and Implementation}} (Tucson, AZ, USA) \emph{(\bibinfo{series}{PLDI '08})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{101–113}.
 \newblock
 \showISBNx{9781595938602}
 \urldef\tempurl%
@@ -147,31 +106,17 @@
 
 \bibitem[Chen et~al\mbox{.}(2018)]%
         {tvm}
-\bibfield{author}{\bibinfo{person}{Tianqi Chen}, \bibinfo{person}{Thierry
-  Moreau}, \bibinfo{person}{Ziheng Jiang}, \bibinfo{person}{Lianmin Zheng},
-  \bibinfo{person}{Eddie Yan}, \bibinfo{person}{Meghan Cowan},
-  \bibinfo{person}{Haichen Shen}, \bibinfo{person}{Leyuan Wang},
-  \bibinfo{person}{Yuwei Hu}, \bibinfo{person}{Luis Ceze},
-  \bibinfo{person}{Carlos Guestrin}, {and} \bibinfo{person}{Arvind
-  Krishnamurthy}.} \bibinfo{year}{2018}\natexlab{}.
-\newblock \showarticletitle{TVM: an automated end-to-end optimizing compiler
-  for deep learning}. In \bibinfo{booktitle}{\emph{Proceedings of the 13th
-  USENIX Conference on Operating Systems Design and Implementation}} (Carlsbad,
-  CA, USA) \emph{(\bibinfo{series}{OSDI'18})}. \bibinfo{publisher}{USENIX
-  Association}, \bibinfo{address}{USA}, \bibinfo{pages}{579–594}.
+\bibfield{author}{\bibinfo{person}{Tianqi Chen}, \bibinfo{person}{Thierry Moreau}, \bibinfo{person}{Ziheng Jiang}, \bibinfo{person}{Lianmin Zheng}, \bibinfo{person}{Eddie Yan}, \bibinfo{person}{Meghan Cowan}, \bibinfo{person}{Haichen Shen}, \bibinfo{person}{Leyuan Wang}, \bibinfo{person}{Yuwei Hu}, \bibinfo{person}{Luis Ceze}, \bibinfo{person}{Carlos Guestrin}, {and} \bibinfo{person}{Arvind Krishnamurthy}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{TVM: an automated end-to-end optimizing compiler for deep learning}. In \bibinfo{booktitle}{\emph{Proceedings of the 13th USENIX Conference on Operating Systems Design and Implementation}} (Carlsbad, CA, USA) \emph{(\bibinfo{series}{OSDI'18})}. \bibinfo{publisher}{USENIX Association}, \bibinfo{address}{USA}, \bibinfo{pages}{579–594}.
 \newblock
 \showISBNx{9781931971478}
 
 
 \bibitem[{Clint Whaley} et~al\mbox{.}(2001)]%
         {atlas}
-\bibfield{author}{\bibinfo{person}{R. {Clint Whaley}}, \bibinfo{person}{Antoine
-  Petitet}, {and} \bibinfo{person}{Jack~J. Dongarra}.}
-  \bibinfo{year}{2001}\natexlab{}.
-\newblock \showarticletitle{Automated empirical optimizations of software and
-  the ATLAS project}.
-\newblock \bibinfo{journal}{\emph{Parallel Comput.}} \bibinfo{volume}{27},
-  \bibinfo{number}{1} (\bibinfo{year}{2001}), \bibinfo{pages}{3--35}.
+\bibfield{author}{\bibinfo{person}{R. {Clint Whaley}}, \bibinfo{person}{Antoine Petitet}, {and} \bibinfo{person}{Jack~J. Dongarra}.} \bibinfo{year}{2001}\natexlab{}.
+\newblock \showarticletitle{Automated empirical optimizations of software and the ATLAS project}.
+\newblock \bibinfo{journal}{\emph{Parallel Comput.}} \bibinfo{volume}{27}, \bibinfo{number}{1} (\bibinfo{year}{2001}), \bibinfo{pages}{3--35}.
 \newblock
 \showISSN{0167-8191}
 \urldef\tempurl%
@@ -183,14 +128,8 @@
 
 \bibitem[Coleman and McKinley(1995)]%
         {mckinley-tss}
-\bibfield{author}{\bibinfo{person}{Stephanie Coleman} {and}
-  \bibinfo{person}{Kathryn~S. McKinley}.} \bibinfo{year}{1995}\natexlab{}.
-\newblock \showarticletitle{Tile size selection using cache organization and
-  data layout}. In \bibinfo{booktitle}{\emph{Proceedings of the ACM SIGPLAN
-  1995 Conference on Programming Language Design and Implementation}} (La
-  Jolla, California, USA) \emph{(\bibinfo{series}{PLDI '95})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{279–290}.
+\bibfield{author}{\bibinfo{person}{Stephanie Coleman} {and} \bibinfo{person}{Kathryn~S. McKinley}.} \bibinfo{year}{1995}\natexlab{}.
+\newblock \showarticletitle{Tile size selection using cache organization and data layout}. In \bibinfo{booktitle}{\emph{Proceedings of the ACM SIGPLAN 1995 Conference on Programming Language Design and Implementation}} (La Jolla, California, USA) \emph{(\bibinfo{series}{PLDI '95})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{279–290}.
 \newblock
 \showISBNx{0897916972}
 \urldef\tempurl%
@@ -198,19 +137,20 @@
 \showDOI{\tempurl}
 
 
+\bibitem[de~Moura and Bj{\o}rner(2008)]%
+        {z3}
+\bibfield{author}{\bibinfo{person}{Leonardo de Moura} {and} \bibinfo{person}{Nikolaj Bj{\o}rner}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{Z3: An Efficient {SMT} Solver}. In \bibinfo{booktitle}{\emph{Tools and Algorithms for the Construction and Analysis of Systems (TACAS)}} \emph{(\bibinfo{series}{Lecture Notes in Computer Science}, Vol.~\bibinfo{volume}{4963})}. \bibinfo{publisher}{Springer}, \bibinfo{pages}{337--340}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1007/978-3-540-78800-3_24}
+\showDOI{\tempurl}
+
+
 \bibitem[Devlin et~al\mbox{.}(2019)]%
         {bert}
-\bibfield{author}{\bibinfo{person}{Jacob Devlin}, \bibinfo{person}{Ming-Wei
-  Chang}, \bibinfo{person}{Kenton Lee}, {and} \bibinfo{person}{Kristina
-  Toutanova}.} \bibinfo{year}{2019}\natexlab{}.
-\newblock \showarticletitle{BERT: Pre-training of Deep Bidirectional
-  Transformers for Language Understanding}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 2019 Conference of the North
-  American Chapter of the Association for Computational Linguistics: Human
-  Language Technologies, Volume 1 (Long and Short Papers)}},
-  Vol.~\bibinfo{volume}{1}. \bibinfo{publisher}{Association for Computational
-  Linguistics}, \bibinfo{address}{Minneapolis, Minnesota},
-  \bibinfo{pages}{4171--4186}.
+\bibfield{author}{\bibinfo{person}{Jacob Devlin}, \bibinfo{person}{Ming-Wei Chang}, \bibinfo{person}{Kenton Lee}, {and} \bibinfo{person}{Kristina Toutanova}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}. In \bibinfo{booktitle}{\emph{Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)}}, Vol.~\bibinfo{volume}{1}. \bibinfo{publisher}{Association for Computational Linguistics}, \bibinfo{address}{Minneapolis, Minnesota}, \bibinfo{pages}{4171--4186}.
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.18653/v1/N19-1423}
@@ -219,16 +159,8 @@
 
 \bibitem[Ferrari et~al\mbox{.}(2023)]%
         {conv-cache}
-\bibfield{author}{\bibinfo{person}{Victor Ferrari}, \bibinfo{person}{Rafael
-  Sousa}, \bibinfo{person}{Marcio Pereira}, \bibinfo{person}{Jo\~{a}o P.~L. de
-  Carvalho}, \bibinfo{person}{Jos\'{e}~Nelson Amaral}, {and}
-  \bibinfo{person}{Guido Araujo}.} \bibinfo{year}{2023}\natexlab{}.
-\newblock \showarticletitle{Improving Convolution via Cache Hierarchy Tiling
-  and Reduced Packing}. In \bibinfo{booktitle}{\emph{Proceedings of the
-  International Conference on Parallel Architectures and Compilation
-  Techniques}} (Chicago, Illinois) \emph{(\bibinfo{series}{PACT '22})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{538–539}.
+\bibfield{author}{\bibinfo{person}{Victor Ferrari}, \bibinfo{person}{Rafael Sousa}, \bibinfo{person}{Marcio Pereira}, \bibinfo{person}{Jo\~{a}o P.~L. de Carvalho}, \bibinfo{person}{Jos\'{e}~Nelson Amaral}, {and} \bibinfo{person}{Guido Araujo}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{Improving Convolution via Cache Hierarchy Tiling and Reduced Packing}. In \bibinfo{booktitle}{\emph{Proceedings of the International Conference on Parallel Architectures and Compilation Techniques}} (Chicago, Illinois) \emph{(\bibinfo{series}{PACT '22})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{538–539}.
 \newblock
 \showISBNx{9781450398688}
 \urldef\tempurl%
@@ -238,11 +170,9 @@
 
 \bibitem[Forrest and Lougee-Heimer(2005)]%
         {cbc}
-\bibfield{author}{\bibinfo{person}{John Forrest} {and} \bibinfo{person}{Robin
-  Lougee-Heimer}.} \bibinfo{year}{2005}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{John Forrest} {and} \bibinfo{person}{Robin Lougee-Heimer}.} \bibinfo{year}{2005}\natexlab{}.
 \newblock \showarticletitle{{CBC} User Guide}.
-\newblock In \bibinfo{booktitle}{\emph{Emerging Theory, Methods, and
-  Applications}}. \bibinfo{publisher}{INFORMS}, \bibinfo{pages}{257--277}.
+\newblock In \bibinfo{booktitle}{\emph{Emerging Theory, Methods, and Applications}}. \bibinfo{publisher}{INFORMS}, \bibinfo{pages}{257--277}.
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1287/educ.1053.0020}
@@ -251,12 +181,9 @@
 
 \bibitem[Goto and Geijn(2008)]%
         {anatomy}
-\bibfield{author}{\bibinfo{person}{Kazushige Goto} {and}
-  \bibinfo{person}{Robert A. van~de Geijn}.} \bibinfo{year}{2008}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Kazushige Goto} {and} \bibinfo{person}{Robert A. van~de Geijn}.} \bibinfo{year}{2008}\natexlab{}.
 \newblock \showarticletitle{Anatomy of high-performance matrix multiplication}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Math. Softw.}}
-  \bibinfo{volume}{34}, \bibinfo{number}{3}, Article \bibinfo{articleno}{12}
-  (\bibinfo{date}{May} \bibinfo{year}{2008}), \bibinfo{numpages}{25}~pages.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Math. Softw.}} \bibinfo{volume}{34}, \bibinfo{number}{3}, Article \bibinfo{articleno}{12} (\bibinfo{date}{May} \bibinfo{year}{2008}), \bibinfo{numpages}{25}~pages.
 \newblock
 \showISSN{0098-3500}
 \urldef\tempurl%
@@ -266,15 +193,8 @@
 
 \bibitem[Grosser et~al\mbox{.}(2014)]%
         {hybridtile}
-\bibfield{author}{\bibinfo{person}{Tobias Grosser}, \bibinfo{person}{Albert
-  Cohen}, \bibinfo{person}{Justin Holewinski}, \bibinfo{person}{P. Sadayappan},
-  {and} \bibinfo{person}{Sven Verdoolaege}.} \bibinfo{year}{2014}\natexlab{}.
-\newblock \showarticletitle{Hybrid Hexagonal/Classical Tiling for GPUs}. In
-  \bibinfo{booktitle}{\emph{Proceedings of Annual IEEE/ACM International
-  Symposium on Code Generation and Optimization}} (Orlando, FL, USA)
-  \emph{(\bibinfo{series}{CGO '14})}. \bibinfo{publisher}{ACM},
-  \bibinfo{address}{New York, NY, USA}, Article \bibinfo{articleno}{66},
-  \bibinfo{numpages}{10}~pages.
+\bibfield{author}{\bibinfo{person}{Tobias Grosser}, \bibinfo{person}{Albert Cohen}, \bibinfo{person}{Justin Holewinski}, \bibinfo{person}{P. Sadayappan}, {and} \bibinfo{person}{Sven Verdoolaege}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Hybrid Hexagonal/Classical Tiling for GPUs}. In \bibinfo{booktitle}{\emph{Proceedings of Annual IEEE/ACM International Symposium on Code Generation and Optimization}} (Orlando, FL, USA) \emph{(\bibinfo{series}{CGO '14})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA}, Article \bibinfo{articleno}{66}, \bibinfo{numpages}{10}~pages.
 \newblock
 \showISBNx{978-1-4503-2670-4}
 \urldef\tempurl%
@@ -284,26 +204,17 @@
 
 \bibitem[Grosser et~al\mbox{.}(2012)]%
         {polly}
-\bibfield{author}{\bibinfo{person}{Tobias Grosser}, \bibinfo{person}{Armin
-  Groesslinger}, {and} \bibinfo{person}{Christian Lengauer}.}
-  \bibinfo{year}{2012}\natexlab{}.
-\newblock \showarticletitle{Polly--Performing Polyhedral Optimizations on a
-  Low-level Intermediate Representation}.
-\newblock \bibinfo{journal}{\emph{Parallel Processing Letters}}
-  \bibinfo{volume}{22}, \bibinfo{number}{04} (\bibinfo{year}{2012}),
-  \bibinfo{pages}{1250010}.
+\bibfield{author}{\bibinfo{person}{Tobias Grosser}, \bibinfo{person}{Armin Groesslinger}, {and} \bibinfo{person}{Christian Lengauer}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Polly--Performing Polyhedral Optimizations on a Low-level Intermediate Representation}.
+\newblock \bibinfo{journal}{\emph{Parallel Processing Letters}} \bibinfo{volume}{22}, \bibinfo{number}{04} (\bibinfo{year}{2012}), \bibinfo{pages}{1250010}.
 \newblock
 
 
 \bibitem[Jangda and Bondhugula(2020)]%
         {Jangda2020dp}
-\bibfield{author}{\bibinfo{person}{Abhinav Jangda} {and} \bibinfo{person}{Uday
-  Bondhugula}.} \bibinfo{year}{2020}\natexlab{}.
-\newblock \showarticletitle{An Effective Fusion and Tile Size Model for
-  PolyMage}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Program. Lang. Syst.}}
-  \bibinfo{volume}{42}, \bibinfo{number}{3}, Article \bibinfo{articleno}{12}
-  (\bibinfo{date}{Nov.} \bibinfo{year}{2020}), \bibinfo{numpages}{27}~pages.
+\bibfield{author}{\bibinfo{person}{Abhinav Jangda} {and} \bibinfo{person}{Uday Bondhugula}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{An Effective Fusion and Tile Size Model for PolyMage}.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Program. Lang. Syst.}} \bibinfo{volume}{42}, \bibinfo{number}{3}, Article \bibinfo{articleno}{12} (\bibinfo{date}{Nov.} \bibinfo{year}{2020}), \bibinfo{numpages}{27}~pages.
 \newblock
 \showISSN{0164-0925}
 \urldef\tempurl%
@@ -313,15 +224,8 @@
 
 \bibitem[Jayaweera et~al\mbox{.}(2024)]%
         {eatss}
-\bibfield{author}{\bibinfo{person}{Malith Jayaweera}, \bibinfo{person}{Martin
-  Kong}, \bibinfo{person}{Yanzhi Wang}, {and} \bibinfo{person}{David Kaeli}.}
-  \bibinfo{year}{2024}\natexlab{}.
-\newblock \showarticletitle{Energy-Aware Tile Size Selection for Affine
-  Programs on GPUs}. In \bibinfo{booktitle}{\emph{Proceedings of the 2024
-  IEEE/ACM International Symposium on Code Generation and Optimization}}
-  (Edinburgh, United Kingdom) \emph{(\bibinfo{series}{CGO '24})}.
-  \bibinfo{publisher}{IEEE Press}, \bibinfo{address}{Piscataway, NJ, USA},
-  \bibinfo{pages}{13–27}.
+\bibfield{author}{\bibinfo{person}{Malith Jayaweera}, \bibinfo{person}{Martin Kong}, \bibinfo{person}{Yanzhi Wang}, {and} \bibinfo{person}{David Kaeli}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Energy-Aware Tile Size Selection for Affine Programs on GPUs}. In \bibinfo{booktitle}{\emph{Proceedings of the 2024 IEEE/ACM International Symposium on Code Generation and Optimization}} (Edinburgh, United Kingdom) \emph{(\bibinfo{series}{CGO '24})}. \bibinfo{publisher}{IEEE Press}, \bibinfo{address}{Piscataway, NJ, USA}, \bibinfo{pages}{13–27}.
 \newblock
 \showISBNx{9798350395099}
 \urldef\tempurl%
@@ -331,16 +235,8 @@
 
 \bibitem[Krishnamoorthy et~al\mbox{.}(2007)]%
         {splitover}
-\bibfield{author}{\bibinfo{person}{Sriram Krishnamoorthy},
-  \bibinfo{person}{Muthu Baskaran}, \bibinfo{person}{Uday Bondhugula},
-  \bibinfo{person}{J. Ramanujam}, \bibinfo{person}{Atanas Rountev}, {and}
-  \bibinfo{person}{P Sadayappan}.} \bibinfo{year}{2007}\natexlab{}.
-\newblock \showarticletitle{Effective Automatic Parallelization of Stencil
-  Computations}. In \bibinfo{booktitle}{\emph{Proceedings of the 28th ACM
-  SIGPLAN Conference on Programming Language Design and Implementation}} (San
-  Diego, California, USA) \emph{(\bibinfo{series}{PLDI '07})}.
-  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
-  \bibinfo{pages}{235--244}.
+\bibfield{author}{\bibinfo{person}{Sriram Krishnamoorthy}, \bibinfo{person}{Muthu Baskaran}, \bibinfo{person}{Uday Bondhugula}, \bibinfo{person}{J. Ramanujam}, \bibinfo{person}{Atanas Rountev}, {and} \bibinfo{person}{P Sadayappan}.} \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{Effective Automatic Parallelization of Stencil Computations}. In \bibinfo{booktitle}{\emph{Proceedings of the 28th ACM SIGPLAN Conference on Programming Language Design and Implementation}} (San Diego, California, USA) \emph{(\bibinfo{series}{PLDI '07})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{235--244}.
 \newblock
 \showISBNx{978-1-59593-633-2}
 \urldef\tempurl%
@@ -350,16 +246,8 @@
 
 \bibitem[Krizhevsky et~al\mbox{.}(2012)]%
         {alexnet}
-\bibfield{author}{\bibinfo{person}{Alex Krizhevsky}, \bibinfo{person}{Ilya
-  Sutskever}, {and} \bibinfo{person}{Geoffrey~E Hinton}.}
-  \bibinfo{year}{2012}\natexlab{}.
-\newblock \showarticletitle{ImageNet Classification with Deep Convolutional
-  Neural Networks}. In \bibinfo{booktitle}{\emph{Advances in Neural Information
-  Processing Systems}}, \bibfield{editor}{\bibinfo{person}{F.~Pereira},
-  \bibinfo{person}{C.J. Burges}, \bibinfo{person}{L.~Bottou}, {and}
-  \bibinfo{person}{K.Q. Weinberger}} (Eds.), Vol.~\bibinfo{volume}{25}.
-  \bibinfo{publisher}{Curran Associates, Inc.}, \bibinfo{address}{Red Hook, NY,
-  USA}, \bibinfo{pages}{1097--1105}.
+\bibfield{author}{\bibinfo{person}{Alex Krizhevsky}, \bibinfo{person}{Ilya Sutskever}, {and} \bibinfo{person}{Geoffrey~E Hinton}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{ImageNet Classification with Deep Convolutional Neural Networks}. In \bibinfo{booktitle}{\emph{Advances in Neural Information Processing Systems}}, \bibfield{editor}{\bibinfo{person}{F.~Pereira}, \bibinfo{person}{C.J. Burges}, \bibinfo{person}{L.~Bottou}, {and} \bibinfo{person}{K.Q. Weinberger}} (Eds.), Vol.~\bibinfo{volume}{25}. \bibinfo{publisher}{Curran Associates, Inc.}, \bibinfo{address}{Red Hook, NY, USA}, \bibinfo{pages}{1097--1105}.
 \newblock
 \urldef\tempurl%
 \url{https://proceedings.neurips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf}
@@ -369,16 +257,8 @@
 
 \bibitem[Lam et~al\mbox{.}(1991)]%
         {lam-tss}
-\bibfield{author}{\bibinfo{person}{Monica~D. Lam}, \bibinfo{person}{Edward~E.
-  Rothberg}, {and} \bibinfo{person}{Michael~E. Wolf}.}
-  \bibinfo{year}{1991}\natexlab{}.
-\newblock \showarticletitle{The cache performance and optimizations of blocked
-  algorithms}. In \bibinfo{booktitle}{\emph{Proceedings of the Fourth
-  International Conference on Architectural Support for Programming Languages
-  and Operating Systems}} (Santa Clara, California, USA)
-  \emph{(\bibinfo{series}{ASPLOS IV})}. \bibinfo{publisher}{Association for
-  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
-  \bibinfo{pages}{63–74}.
+\bibfield{author}{\bibinfo{person}{Monica~D. Lam}, \bibinfo{person}{Edward~E. Rothberg}, {and} \bibinfo{person}{Michael~E. Wolf}.} \bibinfo{year}{1991}\natexlab{}.
+\newblock \showarticletitle{The cache performance and optimizations of blocked algorithms}. In \bibinfo{booktitle}{\emph{Proceedings of the Fourth International Conference on Architectural Support for Programming Languages and Operating Systems}} (Santa Clara, California, USA) \emph{(\bibinfo{series}{ASPLOS IV})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{63–74}.
 \newblock
 \showISBNx{0897913809}
 \urldef\tempurl%
@@ -388,16 +268,8 @@
 
 \bibitem[Li et~al\mbox{.}(2021)]%
         {saday-conv}
-\bibfield{author}{\bibinfo{person}{Rui Li}, \bibinfo{person}{Yufan Xu},
-  \bibinfo{person}{Aravind Sukumaran-Rajam}, \bibinfo{person}{Atanas Rountev},
-  {and} \bibinfo{person}{P. Sadayappan}.} \bibinfo{year}{2021}\natexlab{}.
-\newblock \showarticletitle{Analytical characterization and design space
-  exploration for optimization of CNNs}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 26th ACM International
-  Conference on Architectural Support for Programming Languages and Operating
-  Systems}} (Virtual, USA) \emph{(\bibinfo{series}{ASPLOS '21})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{928–942}.
+\bibfield{author}{\bibinfo{person}{Rui Li}, \bibinfo{person}{Yufan Xu}, \bibinfo{person}{Aravind Sukumaran-Rajam}, \bibinfo{person}{Atanas Rountev}, {and} \bibinfo{person}{P. Sadayappan}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Analytical characterization and design space exploration for optimization of CNNs}. In \bibinfo{booktitle}{\emph{Proceedings of the 26th ACM International Conference on Architectural Support for Programming Languages and Operating Systems}} (Virtual, USA) \emph{(\bibinfo{series}{ASPLOS '21})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{928–942}.
 \newblock
 \showISBNx{9781450383172}
 \urldef\tempurl%
@@ -407,15 +279,8 @@
 
 \bibitem[Li et~al\mbox{.}(2019)]%
         {li-gemm}
-\bibfield{author}{\bibinfo{person}{Xiuhong Li}, \bibinfo{person}{Yun Liang},
-  \bibinfo{person}{Shengen Yan}, \bibinfo{person}{Liancheng Jia}, {and}
-  \bibinfo{person}{Yinghan Li}.} \bibinfo{year}{2019}\natexlab{}.
-\newblock \showarticletitle{A coordinated tiling and batching framework for
-  efficient GEMM on GPUs}. In \bibinfo{booktitle}{\emph{Proceedings of the 24th
-  Symposium on Principles and Practice of Parallel Programming}} (Washington,
-  District of Columbia) \emph{(\bibinfo{series}{PPoPP '19})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{229–241}.
+\bibfield{author}{\bibinfo{person}{Xiuhong Li}, \bibinfo{person}{Yun Liang}, \bibinfo{person}{Shengen Yan}, \bibinfo{person}{Liancheng Jia}, {and} \bibinfo{person}{Yinghan Li}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{A coordinated tiling and batching framework for efficient GEMM on GPUs}. In \bibinfo{booktitle}{\emph{Proceedings of the 24th Symposium on Principles and Practice of Parallel Programming}} (Washington, District of Columbia) \emph{(\bibinfo{series}{PPoPP '19})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{229–241}.
 \newblock
 \showISBNx{9781450362252}
 \urldef\tempurl%
@@ -425,14 +290,9 @@
 
 \bibitem[Low et~al\mbox{.}(2016)]%
         {blis}
-\bibfield{author}{\bibinfo{person}{Tze~Meng Low}, \bibinfo{person}{Francisco~D.
-  Igual}, \bibinfo{person}{Tyler~M. Smith}, {and} \bibinfo{person}{Enrique~S.
-  Quintana-Orti}.} \bibinfo{year}{2016}\natexlab{}.
-\newblock \showarticletitle{Analytical Modeling Is Enough for High-Performance
-  BLIS}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Math. Softw.}}
-  \bibinfo{volume}{43}, \bibinfo{number}{2}, Article \bibinfo{articleno}{12}
-  (\bibinfo{date}{Aug.} \bibinfo{year}{2016}), \bibinfo{numpages}{18}~pages.
+\bibfield{author}{\bibinfo{person}{Tze~Meng Low}, \bibinfo{person}{Francisco~D. Igual}, \bibinfo{person}{Tyler~M. Smith}, {and} \bibinfo{person}{Enrique~S. Quintana-Orti}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Analytical Modeling Is Enough for High-Performance BLIS}.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Math. Softw.}} \bibinfo{volume}{43}, \bibinfo{number}{2}, Article \bibinfo{articleno}{12} (\bibinfo{date}{Aug.} \bibinfo{year}{2016}), \bibinfo{numpages}{18}~pages.
 \newblock
 \showISSN{0098-3500}
 \urldef\tempurl%
@@ -442,13 +302,9 @@
 
 \bibitem[Mehta et~al\mbox{.}(2013)]%
         {tss-revisited}
-\bibfield{author}{\bibinfo{person}{Sanyam Mehta}, \bibinfo{person}{Gautham
-  Beeraka}, {and} \bibinfo{person}{Pen-Chung Yew}.}
-  \bibinfo{year}{2013}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Sanyam Mehta}, \bibinfo{person}{Gautham Beeraka}, {and} \bibinfo{person}{Pen-Chung Yew}.} \bibinfo{year}{2013}\natexlab{}.
 \newblock \showarticletitle{Tile size selection revisited}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}}
-  \bibinfo{volume}{10}, \bibinfo{number}{4}, Article \bibinfo{articleno}{35}
-  (\bibinfo{date}{Dec.} \bibinfo{year}{2013}), \bibinfo{numpages}{27}~pages.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}} \bibinfo{volume}{10}, \bibinfo{number}{4}, Article \bibinfo{articleno}{35} (\bibinfo{date}{Dec.} \bibinfo{year}{2013}), \bibinfo{numpages}{27}~pages.
 \newblock
 \showISSN{1544-3566}
 \urldef\tempurl%
@@ -458,23 +314,16 @@
 
 \bibitem[Mitchell et~al\mbox{.}(2011)]%
         {pulp}
-\bibfield{author}{\bibinfo{person}{Stuart Mitchell}, \bibinfo{person}{Michael
-  OSullivan}, {and} \bibinfo{person}{Iain Dunning}.}
-  \bibinfo{year}{2011}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Stuart Mitchell}, \bibinfo{person}{Michael OSullivan}, {and} \bibinfo{person}{Iain Dunning}.} \bibinfo{year}{2011}\natexlab{}.
 \newblock \showarticletitle{Pulp: a linear programming toolkit for python}.
-\newblock \bibinfo{journal}{\emph{The University of Auckland, Auckland, New
-  Zealand}}  \bibinfo{volume}{65} (\bibinfo{year}{2011}), \bibinfo{pages}{25}.
+\newblock \bibinfo{journal}{\emph{The University of Auckland, Auckland, New Zealand}}  \bibinfo{volume}{65} (\bibinfo{year}{2011}), \bibinfo{pages}{25}.
 \newblock
 
 
 \bibitem[Moses et~al\mbox{.}(2021)]%
         {polygeist}
-\bibfield{author}{\bibinfo{person}{William~S. Moses}, \bibinfo{person}{Lorenzo
-  Chelini}, \bibinfo{person}{Ruizhe Zhao}, {and} \bibinfo{person}{Oleksandr
-  Zinenko}.} \bibinfo{year}{2021}\natexlab{}.
-\newblock \showarticletitle{Polygeist: Raising C to Polyhedral MLIR}. In
-  \bibinfo{booktitle}{\emph{2021 30th International Conference on Parallel
-  Architectures and Compilation Techniques (PACT)}}. \bibinfo{pages}{45--59}.
+\bibfield{author}{\bibinfo{person}{William~S. Moses}, \bibinfo{person}{Lorenzo Chelini}, \bibinfo{person}{Ruizhe Zhao}, {and} \bibinfo{person}{Oleksandr Zinenko}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Polygeist: Raising C to Polyhedral MLIR}. In \bibinfo{booktitle}{\emph{2021 30th International Conference on Parallel Architectures and Compilation Techniques (PACT)}}. \bibinfo{pages}{45--59}.
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1109/PACT52795.2021.00011}
@@ -483,15 +332,9 @@
 
 \bibitem[Mullapudi et~al\mbox{.}(2016)]%
         {automatichalide}
-\bibfield{author}{\bibinfo{person}{Ravi~Teja Mullapudi},
-  \bibinfo{person}{Andrew Adams}, \bibinfo{person}{Dillon Sharlet},
-  \bibinfo{person}{Jonathan Ragan-Kelley}, {and} \bibinfo{person}{Kayvon
-  Fatahalian}.} \bibinfo{year}{2016}\natexlab{}.
-\newblock \showarticletitle{Automatically Scheduling Halide Image Processing
-  Pipelines}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Graph.}} \bibinfo{volume}{35},
-  \bibinfo{number}{4}, Article \bibinfo{articleno}{83} (\bibinfo{date}{jul}
-  \bibinfo{year}{2016}), \bibinfo{numpages}{11}~pages.
+\bibfield{author}{\bibinfo{person}{Ravi~Teja Mullapudi}, \bibinfo{person}{Andrew Adams}, \bibinfo{person}{Dillon Sharlet}, \bibinfo{person}{Jonathan Ragan-Kelley}, {and} \bibinfo{person}{Kayvon Fatahalian}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Automatically Scheduling Halide Image Processing Pipelines}.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Graph.}} \bibinfo{volume}{35}, \bibinfo{number}{4}, Article \bibinfo{articleno}{83} (\bibinfo{date}{jul} \bibinfo{year}{2016}), \bibinfo{numpages}{11}~pages.
 \newblock
 \showISSN{0730-0301}
 \urldef\tempurl%
@@ -501,15 +344,8 @@
 
 \bibitem[Mullapudi et~al\mbox{.}(2015)]%
         {polymage}
-\bibfield{author}{\bibinfo{person}{Ravi~Teja Mullapudi}, \bibinfo{person}{Vinay
-  Vasista}, {and} \bibinfo{person}{Uday Bondhugula}.}
-  \bibinfo{year}{2015}\natexlab{}.
-\newblock \showarticletitle{PolyMage: Automatic Optimization for Image
-  Processing Pipelines}. In \bibinfo{booktitle}{\emph{Proceedings of the
-  Twentieth International Conference on Architectural Support for Programming
-  Languages and Operating Systems}} (Istanbul, Turkey)
-  \emph{(\bibinfo{series}{ASPLOS '15})}. \bibinfo{publisher}{ACM},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{429--443}.
+\bibfield{author}{\bibinfo{person}{Ravi~Teja Mullapudi}, \bibinfo{person}{Vinay Vasista}, {and} \bibinfo{person}{Uday Bondhugula}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{PolyMage: Automatic Optimization for Image Processing Pipelines}. In \bibinfo{booktitle}{\emph{Proceedings of the Twentieth International Conference on Architectural Support for Programming Languages and Operating Systems}} (Istanbul, Turkey) \emph{(\bibinfo{series}{ASPLOS '15})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{429--443}.
 \newblock
 \showISBNx{978-1-4503-2835-7}
 \urldef\tempurl%
@@ -519,15 +355,8 @@
 
 \bibitem[Narasimhan et~al\mbox{.}(2021)]%
         {pluto-tss}
-\bibfield{author}{\bibinfo{person}{Kumudha Narasimhan},
-  \bibinfo{person}{Aravind Acharya}, \bibinfo{person}{Abhinav Baid}, {and}
-  \bibinfo{person}{Uday Bondhugula}.} \bibinfo{year}{2021}\natexlab{}.
-\newblock \showarticletitle{A practical tile size selection model for affine
-  loop nests}. In \bibinfo{booktitle}{\emph{Proceedings of the 35th ACM
-  International Conference on Supercomputing}} (Virtual Event, USA)
-  \emph{(\bibinfo{series}{ICS '21})}. \bibinfo{publisher}{Association for
-  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
-  \bibinfo{pages}{27–39}.
+\bibfield{author}{\bibinfo{person}{Kumudha Narasimhan}, \bibinfo{person}{Aravind Acharya}, \bibinfo{person}{Abhinav Baid}, {and} \bibinfo{person}{Uday Bondhugula}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{A practical tile size selection model for affine loop nests}. In \bibinfo{booktitle}{\emph{Proceedings of the 35th ACM International Conference on Supercomputing}} (Virtual Event, USA) \emph{(\bibinfo{series}{ICS '21})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{27–39}.
 \newblock
 \showISBNx{9781450383356}
 \urldef\tempurl%
@@ -537,8 +366,7 @@
 
 \bibitem[Pouchet and Yuki(2016)]%
         {polybench}
-\bibfield{author}{\bibinfo{person}{Louis-No\"{e}l Pouchet} {and}
-  \bibinfo{person}{Tomofumi Yuki}.} \bibinfo{year}{2016}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Louis-No\"{e}l Pouchet} {and} \bibinfo{person}{Tomofumi Yuki}.} \bibinfo{year}{2016}\natexlab{}.
 \newblock \bibinfo{title}{PolyBench/C 4.2.1}.
 \newblock
 \newblock
@@ -550,16 +378,8 @@
 
 \bibitem[Ragan-Kelley et~al\mbox{.}(2013)]%
         {halide}
-\bibfield{author}{\bibinfo{person}{Jonathan Ragan-Kelley},
-  \bibinfo{person}{Connelly Barnes}, \bibinfo{person}{Andrew Adams},
-  \bibinfo{person}{Sylvain Paris}, \bibinfo{person}{Fr{\'e}do Durand}, {and}
-  \bibinfo{person}{Saman Amarasinghe}.} \bibinfo{year}{2013}\natexlab{}.
-\newblock \showarticletitle{Halide: A Language and Compiler for Optimizing
-  Parallelism, Locality, and Recomputation in Image Processing Pipelines}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 34th ACM SIGPLAN Conference on
-  Programming Language Design and Implementation}} (Seattle, Washington, USA)
-  \emph{(\bibinfo{series}{PLDI '13})}. \bibinfo{publisher}{ACM},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{519--530}.
+\bibfield{author}{\bibinfo{person}{Jonathan Ragan-Kelley}, \bibinfo{person}{Connelly Barnes}, \bibinfo{person}{Andrew Adams}, \bibinfo{person}{Sylvain Paris}, \bibinfo{person}{Fr{\'e}do Durand}, {and} \bibinfo{person}{Saman Amarasinghe}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Halide: A Language and Compiler for Optimizing Parallelism, Locality, and Recomputation in Image Processing Pipelines}. In \bibinfo{booktitle}{\emph{Proceedings of the 34th ACM SIGPLAN Conference on Programming Language Design and Implementation}} (Seattle, Washington, USA) \emph{(\bibinfo{series}{PLDI '13})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{519--530}.
 \newblock
 \showISBNx{978-1-4503-2014-6}
 \urldef\tempurl%
@@ -569,11 +389,8 @@
 
 \bibitem[Renganarayana and Rajopadhye(2004)]%
         {rajopadhye-gp}
-\bibfield{author}{\bibinfo{person}{L. Renganarayana} {and} \bibinfo{person}{S.
-  Rajopadhye}.} \bibinfo{year}{2004}\natexlab{}.
-\newblock \showarticletitle{A Geometric Programming Framework for Optimal
-  Multi-Level Tiling}. In \bibinfo{booktitle}{\emph{SC '04: Proceedings of the
-  2004 ACM/IEEE Conference on Supercomputing}}. \bibinfo{pages}{18--18}.
+\bibfield{author}{\bibinfo{person}{L. Renganarayana} {and} \bibinfo{person}{S. Rajopadhye}.} \bibinfo{year}{2004}\natexlab{}.
+\newblock \showarticletitle{A Geometric Programming Framework for Optimal Multi-Level Tiling}. In \bibinfo{booktitle}{\emph{SC '04: Proceedings of the 2004 ACM/IEEE Conference on Supercomputing}}. \bibinfo{pages}{18--18}.
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1109/SC.2004.3}
@@ -582,46 +399,24 @@
 
 \bibitem[Renganarayana and Rajopadhye(2008)]%
         {rajopadhye-igp}
-\bibfield{author}{\bibinfo{person}{Lakshminarayanan Renganarayana} {and}
-  \bibinfo{person}{Sanjay Rajopadhye}.} \bibinfo{year}{2008}\natexlab{}.
-\newblock \showarticletitle{Positivity, posynomials and tile size selection}.
-  In \bibinfo{booktitle}{\emph{Proceedings of the 2008 ACM/IEEE Conference on
-  Supercomputing}} (Austin, Texas) \emph{(\bibinfo{series}{SC '08})}.
-  \bibinfo{publisher}{IEEE Press}, Article \bibinfo{articleno}{55},
-  \bibinfo{numpages}{12}~pages.
+\bibfield{author}{\bibinfo{person}{Lakshminarayanan Renganarayana} {and} \bibinfo{person}{Sanjay Rajopadhye}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{Positivity, posynomials and tile size selection}. In \bibinfo{booktitle}{\emph{Proceedings of the 2008 ACM/IEEE Conference on Supercomputing}} (Austin, Texas) \emph{(\bibinfo{series}{SC '08})}. \bibinfo{publisher}{IEEE Press}, Article \bibinfo{articleno}{55}, \bibinfo{numpages}{12}~pages.
 \newblock
 \showISBNx{9781424428359}
 
 
 \bibitem[Shao et~al\mbox{.}(2022)]%
         {metaschedule}
-\bibfield{author}{\bibinfo{person}{Junru Shao}, \bibinfo{person}{Xiyou Zhou},
-  \bibinfo{person}{Siyuan Feng}, \bibinfo{person}{Bohan Hou},
-  \bibinfo{person}{Ruihang Lai}, \bibinfo{person}{Hongyi Jin},
-  \bibinfo{person}{Wuwei Lin}, \bibinfo{person}{Masahiro Masuda},
-  \bibinfo{person}{Cody~Hao Yu}, {and} \bibinfo{person}{Tianqi Chen}.}
-  \bibinfo{year}{2022}\natexlab{}.
-\newblock \showarticletitle{Tensor program optimization with probabilistic
-  programs}. In \bibinfo{booktitle}{\emph{Proceedings of the 36th International
-  Conference on Neural Information Processing Systems}} (New Orleans, LA, USA)
-  \emph{(\bibinfo{series}{NIPS '22})}. \bibinfo{publisher}{Curran Associates
-  Inc.}, \bibinfo{address}{Red Hook, NY, USA}, Article
-  \bibinfo{articleno}{2593}, \bibinfo{numpages}{14}~pages.
+\bibfield{author}{\bibinfo{person}{Junru Shao}, \bibinfo{person}{Xiyou Zhou}, \bibinfo{person}{Siyuan Feng}, \bibinfo{person}{Bohan Hou}, \bibinfo{person}{Ruihang Lai}, \bibinfo{person}{Hongyi Jin}, \bibinfo{person}{Wuwei Lin}, \bibinfo{person}{Masahiro Masuda}, \bibinfo{person}{Cody~Hao Yu}, {and} \bibinfo{person}{Tianqi Chen}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Tensor program optimization with probabilistic programs}. In \bibinfo{booktitle}{\emph{Proceedings of the 36th International Conference on Neural Information Processing Systems}} (New Orleans, LA, USA) \emph{(\bibinfo{series}{NIPS '22})}. \bibinfo{publisher}{Curran Associates Inc.}, \bibinfo{address}{Red Hook, NY, USA}, Article \bibinfo{articleno}{2593}, \bibinfo{numpages}{14}~pages.
 \newblock
 \showISBNx{9781713871088}
 
 
 \bibitem[Shirako et~al\mbox{.}(2012)]%
         {shirako-tss}
-\bibfield{author}{\bibinfo{person}{Jun Shirako}, \bibinfo{person}{Kamal
-  Sharma}, \bibinfo{person}{Naznin Fauzia}, \bibinfo{person}{Louis-No\"{e}l
-  Pouchet}, \bibinfo{person}{J. Ramanujam}, \bibinfo{person}{P. Sadayappan},
-  {and} \bibinfo{person}{Vivek Sarkar}.} \bibinfo{year}{2012}\natexlab{}.
-\newblock \showarticletitle{Analytical bounds for optimal tile size selection}.
-  In \bibinfo{booktitle}{\emph{Proceedings of the 21st International Conference
-  on Compiler Construction}} (Tallinn, Estonia)
-  \emph{(\bibinfo{series}{CC'12})}. \bibinfo{publisher}{Springer-Verlag},
-  \bibinfo{address}{Berlin, Heidelberg}, \bibinfo{pages}{101–121}.
+\bibfield{author}{\bibinfo{person}{Jun Shirako}, \bibinfo{person}{Kamal Sharma}, \bibinfo{person}{Naznin Fauzia}, \bibinfo{person}{Louis-No\"{e}l Pouchet}, \bibinfo{person}{J. Ramanujam}, \bibinfo{person}{P. Sadayappan}, {and} \bibinfo{person}{Vivek Sarkar}.} \bibinfo{year}{2012}\natexlab{}.
+\newblock \showarticletitle{Analytical bounds for optimal tile size selection}. In \bibinfo{booktitle}{\emph{Proceedings of the 21st International Conference on Compiler Construction}} (Tallinn, Estonia) \emph{(\bibinfo{series}{CC'12})}. \bibinfo{publisher}{Springer-Verlag}, \bibinfo{address}{Berlin, Heidelberg}, \bibinfo{pages}{101–121}.
 \newblock
 \showISBNx{9783642286513}
 \urldef\tempurl%
@@ -631,27 +426,15 @@
 
 \bibitem[Sutskever et~al\mbox{.}(2014)]%
         {lstm}
-\bibfield{author}{\bibinfo{person}{Ilya Sutskever}, \bibinfo{person}{Oriol
-  Vinyals}, {and} \bibinfo{person}{Quoc~V. Le}.}
-  \bibinfo{year}{2014}\natexlab{}.
-\newblock \showarticletitle{Sequence to sequence learning with neural
-  networks}. In \bibinfo{booktitle}{\emph{Proceedings of the 28th International
-  Conference on Neural Information Processing Systems - Volume 2}} (Montreal,
-  Canada) \emph{(\bibinfo{series}{NIPS'14})}. \bibinfo{publisher}{MIT Press},
-  \bibinfo{address}{Cambridge, MA, USA}, \bibinfo{pages}{3104–3112}.
+\bibfield{author}{\bibinfo{person}{Ilya Sutskever}, \bibinfo{person}{Oriol Vinyals}, {and} \bibinfo{person}{Quoc~V. Le}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Sequence to sequence learning with neural networks}. In \bibinfo{booktitle}{\emph{Proceedings of the 28th International Conference on Neural Information Processing Systems - Volume 2}} (Montreal, Canada) \emph{(\bibinfo{series}{NIPS'14})}. \bibinfo{publisher}{MIT Press}, \bibinfo{address}{Cambridge, MA, USA}, \bibinfo{pages}{3104–3112}.
 \newblock
 
 
 \bibitem[Tillet et~al\mbox{.}(2019)]%
         {triton}
-\bibfield{author}{\bibinfo{person}{Philippe Tillet}, \bibinfo{person}{H.~T.
-  Kung}, {and} \bibinfo{person}{David Cox}.} \bibinfo{year}{2019}\natexlab{}.
-\newblock \showarticletitle{Triton: an intermediate language and compiler for
-  tiled neural network computations}. In \bibinfo{booktitle}{\emph{Proceedings
-  of the 3rd ACM SIGPLAN International Workshop on Machine Learning and
-  Programming Languages}} (Phoenix, AZ, USA) \emph{(\bibinfo{series}{MAPL
-  2019})}. \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{10–19}.
+\bibfield{author}{\bibinfo{person}{Philippe Tillet}, \bibinfo{person}{H.~T. Kung}, {and} \bibinfo{person}{David Cox}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Triton: an intermediate language and compiler for tiled neural network computations}. In \bibinfo{booktitle}{\emph{Proceedings of the 3rd ACM SIGPLAN International Workshop on Machine Learning and Programming Languages}} (Phoenix, AZ, USA) \emph{(\bibinfo{series}{MAPL 2019})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{10–19}.
 \newblock
 \showISBNx{9781450367196}
 \urldef\tempurl%
@@ -661,9 +444,7 @@
 
 \bibitem[Vaidya et~al\mbox{.}(2017)]%
         {polynn}
-\bibfield{author}{\bibinfo{person}{Hrishikesh Vaidya}, \bibinfo{person}{Akilesh
-  Badrinaaraayanan}, \bibinfo{person}{Abhishek~A. Patwardhan}, {and}
-  \bibinfo{person}{Ramakrishna Upadrasta}.} \bibinfo{year}{2017}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Hrishikesh Vaidya}, \bibinfo{person}{Akilesh Badrinaaraayanan}, \bibinfo{person}{Abhishek~A. Patwardhan}, {and} \bibinfo{person}{Ramakrishna Upadrasta}.} \bibinfo{year}{2017}\natexlab{}.
 \newblock \bibinfo{title}{PolyBench/polyNN}.
 \newblock
 \newblock
@@ -675,18 +456,9 @@
 
 \bibitem[Vasilache et~al\mbox{.}(2019)]%
         {tc}
-\bibfield{author}{\bibinfo{person}{Nicolas Vasilache},
-  \bibinfo{person}{Oleksandr Zinenko}, \bibinfo{person}{Theodoros Theodoridis},
-  \bibinfo{person}{Priya Goyal}, \bibinfo{person}{Zachary Devito},
-  \bibinfo{person}{William~S. Moses}, \bibinfo{person}{Sven Verdoolaege},
-  \bibinfo{person}{Andrew Adams}, {and} \bibinfo{person}{Albert Cohen}.}
-  \bibinfo{year}{2019}\natexlab{}.
-\newblock \showarticletitle{The Next 700 Accelerated Layers: From Mathematical
-  Expressions of Network Computation Graphs to Accelerated GPU Kernels,
-  Automatically}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}}
-  \bibinfo{volume}{16}, \bibinfo{number}{4}, Article \bibinfo{articleno}{38}
-  (\bibinfo{date}{Oct.} \bibinfo{year}{2019}), \bibinfo{numpages}{26}~pages.
+\bibfield{author}{\bibinfo{person}{Nicolas Vasilache}, \bibinfo{person}{Oleksandr Zinenko}, \bibinfo{person}{Theodoros Theodoridis}, \bibinfo{person}{Priya Goyal}, \bibinfo{person}{Zachary Devito}, \bibinfo{person}{William~S. Moses}, \bibinfo{person}{Sven Verdoolaege}, \bibinfo{person}{Andrew Adams}, {and} \bibinfo{person}{Albert Cohen}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{The Next 700 Accelerated Layers: From Mathematical Expressions of Network Computation Graphs to Accelerated GPU Kernels, Automatically}.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}} \bibinfo{volume}{16}, \bibinfo{number}{4}, Article \bibinfo{articleno}{38} (\bibinfo{date}{Oct.} \bibinfo{year}{2019}), \bibinfo{numpages}{26}~pages.
 \newblock
 \showISSN{1544-3566}
 \urldef\tempurl%
@@ -696,14 +468,9 @@
 
 \bibitem[Verdoolaege et~al\mbox{.}(2013)]%
         {ppcg}
-\bibfield{author}{\bibinfo{person}{Sven Verdoolaege}, \bibinfo{person}{Juan
-  Carlos~Juega}, \bibinfo{person}{Albert Cohen}, \bibinfo{person}{Jos{\'e}
-  Ignacio~G\'{o}mez}, \bibinfo{person}{Christian Tenllado}, {and}
-  \bibinfo{person}{Francky Catthoor}.} \bibinfo{year}{2013}\natexlab{}.
+\bibfield{author}{\bibinfo{person}{Sven Verdoolaege}, \bibinfo{person}{Juan Carlos~Juega}, \bibinfo{person}{Albert Cohen}, \bibinfo{person}{Jos{\'e} Ignacio~G\'{o}mez}, \bibinfo{person}{Christian Tenllado}, {and} \bibinfo{person}{Francky Catthoor}.} \bibinfo{year}{2013}\natexlab{}.
 \newblock \showarticletitle{Polyhedral Parallel Code Generation for CUDA}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}}
-  \bibinfo{volume}{9}, \bibinfo{number}{4}, Article \bibinfo{articleno}{54}
-  (\bibinfo{date}{Jan.} \bibinfo{year}{2013}), \bibinfo{numpages}{23}~pages.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}} \bibinfo{volume}{9}, \bibinfo{number}{4}, Article \bibinfo{articleno}{54} (\bibinfo{date}{Jan.} \bibinfo{year}{2013}), \bibinfo{numpages}{23}~pages.
 \newblock
 \showISSN{1544-3566}
 \urldef\tempurl%
@@ -713,14 +480,9 @@
 
 \bibitem[Yotov et~al\mbox{.}(2005)]%
         {pingali-tss}
-\bibfield{author}{\bibinfo{person}{K. Yotov}, \bibinfo{person}{Xiaoming Li},
-  \bibinfo{person}{Gang Ren}, \bibinfo{person}{M.J.S. Garzaran},
-  \bibinfo{person}{D. Padua}, \bibinfo{person}{K. Pingali}, {and}
-  \bibinfo{person}{P. Stodghill}.} \bibinfo{year}{2005}\natexlab{}.
-\newblock \showarticletitle{Is Search Really Necessary to Generate
-  High-Performance BLAS?}
-\newblock \bibinfo{journal}{\emph{Proc. IEEE}} \bibinfo{volume}{93},
-  \bibinfo{number}{2} (\bibinfo{year}{2005}), \bibinfo{pages}{358--386}.
+\bibfield{author}{\bibinfo{person}{K. Yotov}, \bibinfo{person}{Xiaoming Li}, \bibinfo{person}{Gang Ren}, \bibinfo{person}{M.J.S. Garzaran}, \bibinfo{person}{D. Padua}, \bibinfo{person}{K. Pingali}, {and} \bibinfo{person}{P. Stodghill}.} \bibinfo{year}{2005}\natexlab{}.
+\newblock \showarticletitle{Is Search Really Necessary to Generate High-Performance BLAS?}
+\newblock \bibinfo{journal}{\emph{Proc. IEEE}} \bibinfo{volume}{93}, \bibinfo{number}{2} (\bibinfo{year}{2005}), \bibinfo{pages}{358--386}.
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1109/JPROC.2004.840444}
@@ -729,37 +491,20 @@
 
 \bibitem[Yuan et~al\mbox{.}(2026)]%
         {tilemind}
-\bibfield{author}{\bibinfo{person}{Shihan Yuan}, \bibinfo{person}{Zuoyan
-  Zhang}, \bibinfo{person}{Guanghui Song}, \bibinfo{person}{Junhui Peng},
-  \bibinfo{person}{Feng Wang}, \bibinfo{person}{Zhuo Tang},
-  \bibinfo{person}{Kenli Li}, {and} \bibinfo{person}{Jie Zhao}.}
-  \bibinfo{year}{2026}\natexlab{}.
-\newblock \showarticletitle{A Decoupled Analytical Model for Tile Size
-  Selection in Affine Programs}.
-\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}}
-  (\bibinfo{date}{April} \bibinfo{year}{2026}), \bibinfo{numpages}{25}~pages.
+\bibfield{author}{\bibinfo{person}{Shihan Yuan}, \bibinfo{person}{Zuoyan Zhang}, \bibinfo{person}{Guanghui Song}, \bibinfo{person}{Junhui Peng}, \bibinfo{person}{Feng Wang}, \bibinfo{person}{Zhuo Tang}, \bibinfo{person}{Kenli Li}, {and} \bibinfo{person}{Jie Zhao}.} \bibinfo{year}{2026}\natexlab{}.
+\newblock \showarticletitle{A Decoupled Analytical Model for Tile Size Selection in Affine Programs}.
+\newblock \bibinfo{journal}{\emph{ACM Trans. Archit. Code Optim.}} \bibinfo{volume}{23}, \bibinfo{number}{2}, Article \bibinfo{articleno}{46} (\bibinfo{date}{June} \bibinfo{year}{2026}), \bibinfo{numpages}{25}~pages.
 \newblock
 \showISSN{1544-3566}
 \urldef\tempurl%
 \url{https://doi.org/10.1145/3806056}
 \showDOI{\tempurl}
-\newblock
-\shownote{Just Accepted}.
 
 
 \bibitem[Yuki et~al\mbox{.}(2010)]%
         {yuki-tss}
-\bibfield{author}{\bibinfo{person}{Tomofumi Yuki},
-  \bibinfo{person}{Lakshminarayanan Renganarayanan}, \bibinfo{person}{Sanjay
-  Rajopadhye}, \bibinfo{person}{Charles Anderson},
-  \bibinfo{person}{Alexandre~E. Eichenberger}, {and} \bibinfo{person}{Kevin
-  O'Brien}.} \bibinfo{year}{2010}\natexlab{}.
-\newblock \showarticletitle{Automatic creation of tile size selection models}.
-  In \bibinfo{booktitle}{\emph{Proceedings of the 8th Annual IEEE/ACM
-  International Symposium on Code Generation and Optimization}} (Toronto,
-  Ontario, Canada) \emph{(\bibinfo{series}{CGO '10})}.
-  \bibinfo{publisher}{Association for Computing Machinery},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{190–199}.
+\bibfield{author}{\bibinfo{person}{Tomofumi Yuki}, \bibinfo{person}{Lakshminarayanan Renganarayanan}, \bibinfo{person}{Sanjay Rajopadhye}, \bibinfo{person}{Charles Anderson}, \bibinfo{person}{Alexandre~E. Eichenberger}, {and} \bibinfo{person}{Kevin O'Brien}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Automatic creation of tile size selection models}. In \bibinfo{booktitle}{\emph{Proceedings of the 8th Annual IEEE/ACM International Symposium on Code Generation and Optimization}} (Toronto, Ontario, Canada) \emph{(\bibinfo{series}{CGO '10})}. \bibinfo{publisher}{Association for Computing Machinery}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{190–199}.
 \newblock
 \showISBNx{9781605586359}
 \urldef\tempurl%
@@ -769,19 +514,8 @@
 
 \bibitem[Zhao et~al\mbox{.}(2021)]%
         {akg}
-\bibfield{author}{\bibinfo{person}{Jie Zhao}, \bibinfo{person}{Bojie Li},
-  \bibinfo{person}{Wang Nie}, \bibinfo{person}{Zhen Geng},
-  \bibinfo{person}{Renwei Zhang}, \bibinfo{person}{Xiong Gao},
-  \bibinfo{person}{Bin Cheng}, \bibinfo{person}{Chen Wu}, \bibinfo{person}{Yun
-  Cheng}, \bibinfo{person}{Zheng Li}, \bibinfo{person}{Peng Di},
-  \bibinfo{person}{Kun Zhang}, {and} \bibinfo{person}{Xuefeng Jin}.}
-  \bibinfo{year}{2021}\natexlab{}.
-\newblock \showarticletitle{AKG: Automatic Kernel Generation for Neural
-  Processing Units Using Polyhedral Transformations}. In
-  \bibinfo{booktitle}{\emph{Proceedings of the 42nd ACM SIGPLAN International
-  Conference on Programming Language Design and Implementation}}
-  \emph{(\bibinfo{series}{PLDI'21})}. \bibinfo{publisher}{ACM},
-  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{1233--1248}.
+\bibfield{author}{\bibinfo{person}{Jie Zhao}, \bibinfo{person}{Bojie Li}, \bibinfo{person}{Wang Nie}, \bibinfo{person}{Zhen Geng}, \bibinfo{person}{Renwei Zhang}, \bibinfo{person}{Xiong Gao}, \bibinfo{person}{Bin Cheng}, \bibinfo{person}{Chen Wu}, \bibinfo{person}{Yun Cheng}, \bibinfo{person}{Zheng Li}, \bibinfo{person}{Peng Di}, \bibinfo{person}{Kun Zhang}, {and} \bibinfo{person}{Xuefeng Jin}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{AKG: Automatic Kernel Generation for Neural Processing Units Using Polyhedral Transformations}. In \bibinfo{booktitle}{\emph{Proceedings of the 42nd ACM SIGPLAN International Conference on Programming Language Design and Implementation}} \emph{(\bibinfo{series}{PLDI'21})}. \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{1233--1248}.
 \newblock
 \showISBNx{9781450383912}
 \urldef\tempurl%
@@ -792,19 +526,8 @@
 
 \bibitem[Zheng et~al\mbox{.}(2020)]%
         {ansor}
-\bibfield{author}{\bibinfo{person}{Lianmin Zheng}, \bibinfo{person}{Chengfan
-  Jia}, \bibinfo{person}{Minmin Sun}, \bibinfo{person}{Zhao Wu},
-  \bibinfo{person}{Cody~Hao Yu}, \bibinfo{person}{Ameer Haj-Ali},
-  \bibinfo{person}{Yida Wang}, \bibinfo{person}{Jun Yang},
-  \bibinfo{person}{Danyang Zhuo}, \bibinfo{person}{Koushik Sen},
-  \bibinfo{person}{Joseph~E. Gonzalez}, {and} \bibinfo{person}{Ion Stoica}.}
-  \bibinfo{year}{2020}\natexlab{}.
-\newblock \showarticletitle{Ansor: generating high-performance tensor programs
-  for deep learning}. In \bibinfo{booktitle}{\emph{Proceedings of the 14th
-  USENIX Conference on Operating Systems Design and Implementation}}
-  \emph{(\bibinfo{series}{OSDI'20})}. \bibinfo{publisher}{USENIX Association},
-  \bibinfo{address}{USA}, Article \bibinfo{articleno}{49},
-  \bibinfo{numpages}{17}~pages.
+\bibfield{author}{\bibinfo{person}{Lianmin Zheng}, \bibinfo{person}{Chengfan Jia}, \bibinfo{person}{Minmin Sun}, \bibinfo{person}{Zhao Wu}, \bibinfo{person}{Cody~Hao Yu}, \bibinfo{person}{Ameer Haj-Ali}, \bibinfo{person}{Yida Wang}, \bibinfo{person}{Jun Yang}, \bibinfo{person}{Danyang Zhuo}, \bibinfo{person}{Koushik Sen}, \bibinfo{person}{Joseph~E. Gonzalez}, {and} \bibinfo{person}{Ion Stoica}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Ansor: generating high-performance tensor programs for deep learning}. In \bibinfo{booktitle}{\emph{Proceedings of the 14th USENIX Conference on Operating Systems Design and Implementation}} \emph{(\bibinfo{series}{OSDI'20})}. \bibinfo{publisher}{USENIX Association}, \bibinfo{address}{USA}, Article \bibinfo{articleno}{49}, \bibinfo{numpages}{17}~pages.
 \newblock
 \showISBNx{978-1-939133-19-9}
 

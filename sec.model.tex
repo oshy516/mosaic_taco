@@ -2,6 +2,80 @@
 \section{Analytical Modeling and Problem Solving}
 \label{sec:model}
 
+% Tab. 2 is the notation table for this section, so it is declared here rather
+% than in Sec. 4.2: that keeps it off the page that already carries Tab. 1 and
+% puts it where the reader needs it while reading the model.
+\begin{table}[tbp]
+  \caption{Model notation.}
+  \label{tab:model-notation}
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabularx}{\textwidth}{@{}
+    >{\raggedright\arraybackslash}p{0.215\linewidth}
+    >{\raggedright\arraybackslash}X
+    @{}}
+    \toprule
+    \textbf{Symbol} & \textbf{Meaning} \\
+    \midrule
+    \multicolumn{2}{@{}l@{}}{\textbf{Optimization variables}} \\
+    \addlinespace[1pt]
+    \(\tile_d,\ b_d\) & Tile size and thread-block size for dimension~\(d\),
+                           whose loop extent is \(N_d\). \\
+    \addlinespace[2pt]
+    \midrule
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Enumerated modeling state}} \\
+    \addlinespace[1pt]
+    \(S \in \Sigma\) & Abstract shared-memory placement scenario
+                         (subset of \(\Sigma_{\mathit{cand}}\)). \\
+    \addlinespace[2pt]
+    \midrule
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Architecture constants}\quad
+      \textit{(queried or profiled once per GPU)}} \\
+    \addlinespace[1pt]
+    \(\Nsm,\Bsm,\Tsm,\Tmax,\Wwarp\) &
+      SM count; max resident blocks and threads per SM; max threads per block;
+      warp size. \\
+    \(\Ssm,\Sblock,\Rsm\) &
+      Per-SM and per-block shared memory capacity; SM register-file size. \\
+    \(\Lg,\Ls,\Lf,\Ly\) &
+      Effective costs for global access, shared-memory access, FMA,
+      and barrier synchronization. \\
+    \(\Lr,\ \gcoal\) &
+      Register-access cost; coalescing granularity for loads. \\
+    \addlinespace[2pt]
+    \midrule
+    \addlinespace[2pt]
+    \multicolumn{2}{@{}l@{}}{\textbf{Derived quantities}} \\
+    \addlinespace[1pt]
+    \(\rblk_d,\ \work\) & Register-blocking factor \(\rblk_d=\tile_d/b_d\) and
+                           per-thread output count \(\work=\prod_{d\in\mathcal{P}}\rblk_d\). \\
+    \(\phi_{m}\) &
+      Reads-per-FMA ratio for class \(m\!\in\!\{\mathit{smem},\mathit{gmem}\}\); links register blocking to traffic. \\
+    \(\rho_{\mathrm{reg}},\ \creg,\ \cfma\) &
+      Register accesses per reduction-body evaluation; \(\creg=\rho_{\mathrm{reg}}\Lr\); per-evaluation cost \(\cfma\). \\
+    \(\operatorname{smem}(\tvec;S),\ |A|_{\tvec}\) &
+      Shared-memory footprint and operand tile footprint. \\
+    \(K_{\mathit{total}},\ K_{\mathit{outer}}\) &
+      Reduction work per output \(\prod_{r\in\mathcal{R}}N_r\); cooperative load
+      rounds \(\prod_{r\in\mathcal{R}}\lceil N_r/\tile_r\rceil\). \\
+    \(n_{\mathit{op}}(s)\) &
+      Operation count of statement \(s\) in the statement metadata. \\
+    \(N_{\mathit{blocks}},\ C_{\mathit{blocks}}\) &
+      Grid size and blocks resident across all SMs; their ratio, rounded up,
+      is the wave count. \\
+    \(\bps,\ R_{\mathit{avail}}\) &
+      Resident blocks per SM; registers per thread the residency estimate
+      leaves available. \\
+    \(\hat{R},\ \Czero\) &
+      Lower bound on the per-thread register working set; registers live throughout the kernel. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
 Given transformed metadata and target constants, \name solves the selection problem of \autoref{sec:overview} over \(\tvec\), \(\mathbf{b}\), and the placement scenarios \(S\), inducing register-blocking factors \(\rblk_d=\tile_d/b_d\), footprints, resident blocks, waves, and register working sets; \autoref{tab:model-notation} summarizes the main notation. Recall from \autoref{eq:two-level} that the analytical comparison over \(S\) and \((\tvec,\mathbf{b})\) factorizes into outer placement-scenario enumeration and, for each fixed \(S\), an inner two-stage analytical selection. The primary inner objective is the quantized wave cost.
 \begin{equation}
 \min_{(\tvec,\mathbf{b})\in\mathcal{V}(S)}

@@ -184,10 +184,12 @@ address = {New York, NY, USA},
 issn = {1544-3566},
 url = {https://doi.org/10.1145/3806056},
 doi = {10.1145/3806056},
-abstract = {Existing tile size selection approaches are tightly coupled with compiler transformation pipelines, often leading to inaccurate modeling of cache behavior and limited effectiveness for non-rectangular tile shapes. This paper presents TileMind, a decoupled analytical model that combines compile-time and runtime information for tile size selection in affine programs. It introduces a transformation-aware pre-tiling step that enables the decoupled selector to remain consistent with compiler transformations while extracting compile-time metadata. The extracted metadata is then combined with profiled runtime characteristics to construct a richer yet tractable feasible domain, within which a nonlinear objective for tile size selection is formulated. This objective is subsequently transformed into a binary product linearization problem, with its nonlinear constraints also linearized for efficient optimization. Finally, an intra-tile optimization aligns computation with data layout to enhance data reuse within tiles. Across two multi-core Intel CPUs, TileMind achieves 1.49 \texttimes{} (sequential) and 1.33 \texttimes{} (parallel) mean speedups on twenty PolyBench kernels, and 2.08–3.54 \texttimes{} speedups on three deep learning workloads over the state-of-the-art analytical model Pluto-tss. Compared with TVM’s latest autotuner MetaSchedule, TileMind delivers 1.35–1.46 \texttimes{} mean speedups while reducing tuning overhead by 2–4 orders of magnitude. While demonstrating effectiveness on selecting tile sizes for non-rectangular tile shapes and compatibility with PPCG, Pluto, and TVM, we further provide proof-of-concept results on GPUs, illustrating the potential portability of TileMind across architectures.},
-note = {Just Accepted},
 journal = {ACM Trans. Archit. Code Optim.},
-month = apr,
+volume = {23},
+number = {2},
+articleno = {46},
+abstract = {Existing tile size selection approaches are tightly coupled with compiler transformation pipelines, often leading to inaccurate modeling of cache behavior and limited effectiveness for non-rectangular tile shapes. This paper presents TileMind, a decoupled analytical model that combines compile-time and runtime information for tile size selection in affine programs. It introduces a transformation-aware pre-tiling step that enables the decoupled selector to remain consistent with compiler transformations while extracting compile-time metadata. The extracted metadata is then combined with profiled runtime characteristics to construct a richer yet tractable feasible domain, within which a nonlinear objective for tile size selection is formulated. This objective is subsequently transformed into a binary product linearization problem, with its nonlinear constraints also linearized for efficient optimization. Finally, an intra-tile optimization aligns computation with data layout to enhance data reuse within tiles. Across two multi-core Intel CPUs, TileMind achieves 1.49 \texttimes{} (sequential) and 1.33 \texttimes{} (parallel) mean speedups on twenty PolyBench kernels, and 2.08–3.54 \texttimes{} speedups on three deep learning workloads over the state-of-the-art analytical model Pluto-tss. Compared with TVM’s latest autotuner MetaSchedule, TileMind delivers 1.35–1.46 \texttimes{} mean speedups while reducing tuning overhead by 2–4 orders of magnitude. While demonstrating effectiveness on selecting tile sizes for non-rectangular tile shapes and compatibility with PPCG, Pluto, and TVM, we further provide proof-of-concept results on GPUs, illustrating the potential portability of TileMind across architectures.},
+month = jun,
 numpages = {25},
 keywords = {Loop Tiling, Polyhedral Compilation, Analytical Model, Cache Optimization}
 }
@@ -969,4 +971,16 @@ series = {MAPL 2019}
   pages     = {257--277},
   year      = {2005},
   doi       = {10.1287/educ.1053.0020}
+}
+
+@inproceedings{z3,
+  author    = {de Moura, Leonardo and Bj{\o}rner, Nikolaj},
+  title     = {Z3: An Efficient {SMT} Solver},
+  booktitle = {Tools and Algorithms for the Construction and Analysis of Systems (TACAS)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {4963},
+  pages     = {337--340},
+  year      = {2008},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-540-78800-3_24}
 }

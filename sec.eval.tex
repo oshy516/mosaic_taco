@@ -25,9 +25,10 @@ Our cross-generation PolyBench evaluation uses three generations of NVIDIA GPUs 
     \bottomrule
   \end{tabular}
   \end{adjustbox}
+%   \vspace{-1\baselineskip} 
 \end{table}
 
-All PolyBench/C 4.2.1~\cite{polybench} measurements, in \autoref{tab:benchmark} and in the bounded PPCG sweep of \autoref{subsec:bounded-ppcg-sweep}, use the official \texttt{EXTRALARGE} problem sizes and FP64 precision. The precision follows each backend's own convention rather than being imposed by \name: the PPCG path is FP64, matching the PolyBench/C and PolyNN~\cite{polynn} sources, while the TVM path is FP32, matching MetaSchedule's default tensor type; \autoref{tab:vendor-comparison} reports both FP64 and FP32/TF32 for the same GEMM shapes. The cost model reasons about tile footprints, register working sets, and traffic in bytes rather than in elements, so precision enters the model only through the element size recorded in the metadata of \autoref{sec:compile-time-metadata}. The same formulation therefore drives both regimes without retuning, and the FP64 gains over PPCG and the FP32 gains over MetaSchedule reported below are evidence that it does. \name selects configurations for a given precision and does not change it. We verified output correctness for every measured configuration. One consequence of the FP64 setting is that absolute PolyBench times are not ordered by GPU generation: the RTX 4090 issues FP64 at \(1/64\) of its FP32 rate, against \(1/2\) on the A100 and the V100, so the V100 is faster in absolute terms on the FP64-bound kernels of \autoref{tab:benchmark}.
+All PolyBench/C 4.2.1~\cite{polybench} measurements, in \autoref{tab:benchmark} and the bounded PPCG sweep of \autoref{subsec:bounded-ppcg-sweep}, use the official \texttt{EXTRALARGE} problem sizes and FP64 precision. The precision follows each backend's own convention rather than being imposed by \name: the PPCG path is FP64, matching the PolyBench/C and PolyNN~\cite{polynn} sources, while the TVM path is FP32, matching MetaSchedule's default tensor type; \autoref{tab:vendor-comparison} reports both FP64 and FP32/TF32 for the same GEMM shapes. The cost model reasons about tile footprints, register working sets, and traffic in bytes rather than in elements, so precision enters the model only through the element size recorded in the metadata of \autoref{sec:compile-time-metadata}. The same formulation therefore drives both regimes without retuning, and the FP64 gains over PPCG and the FP32 gains over MetaSchedule reported below are evidence that it does. \name selects configurations for a given precision and does not change it. We verified output correctness for every measured configuration. One consequence of the FP64 setting is that absolute PolyBench times are not ordered by GPU generation: the RTX 4090 issues FP64 at \(1/64\) of its FP32 rate, against \(1/2\) on the A100 and the V100, so the V100 is faster in absolute terms on the FP64-bound kernels.
 
 The same timing protocol is used for PolyBench, the bounded PPCG sweep, deep-learning operators, vendor comparisons, and end-to-end workloads. Each configuration is timed after 10 warm-up runs followed by 100 timed runs using CUDA events, and we report the median of the 100 timed runs as execution time. The median relative standard deviation across the successfully measured sweep configurations is \(0.30\%\). We will release \name and the scripts that reproduce these experiments as an artifact.
 
@@ -104,6 +105,7 @@ seidel-2d & 757.94 & 0.270 & \(1.27\times\) & \(1.51\times\) & \(5.63\times\) & 
 \bottomrule
 \end{tabular}
 }
+\vspace{-0.5\baselineskip}
 \end{table}
 
 We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils: the union of kernels suitable for CUDA code generation~\cite{ppcg} and those evaluated by EATSS, allowing comparison against both on all three GPUs. \autoref{tab:benchmark} reports, per platform, \name's execution and solver times, its speedups over PPCG and EATSS, and the reduction in selection overhead relative to EATSS; execution times are medians, speedup aggregates are geometric means, and solver-time aggregates are arithmetic means. \name achieves geometric-mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ over PPCG, and measured latency ratios of $1.37\times$, $1.89\times$, and $1.55\times$ relative to EATSS, on the RTX 4090, A100, and V100, respectively. These gains trace to the coupled loop of \autoref{sec:bg-challenges} resolved in one formulation: the quantized wave cost avoids occupancy-boundary cliffs, and the AM--GM balance maximizes reuse per register (\autoref{sec:cost}). The effect is largest on contraction-heavy kernels, where PPCG's fixed heuristic leaves register blocking unbalanced; on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ by recovering \(\rblk_i=\rblk_j=\sqrt{\work}\). The advantage holds as register and shared-memory budgets vary across GPU generations.
@@ -144,11 +146,11 @@ To compare \name with an empirical tile search, we perform a deterministic bound
       \draw[black,dashed,thick] (axis cs:correlation,1) -- (axis cs:Geomean,1);
       \node[font=\tiny,rotate=90,anchor=west,
             inner sep=0pt,outer sep=2pt]
-        at (axis cs:Geomean,0.972809917) {\textbf{0.973\(\boldsymbol{\times}\)}};
+        at (axis cs:Geomean,0.972809917) {\textbf{0.97\(\boldsymbol{\times}\)}};
     \end{axis}
   \end{tikzpicture}
   \caption{\name{} speedup over bounded-sweep best on the RTX 4090; values above one favor \name{}.}
-  \Description{Bar chart of bounded-sweep-best time divided by Mosaic time for 25 PolyBench benchmarks and their geometric mean. A dashed horizontal line marks parity at one, and the geometric mean is 0.973 times.}
+  \Description{Bar chart of bounded-sweep-best time divided by Mosaic time for 25 PolyBench benchmarks and their geometric mean. A dashed horizontal line marks parity at one, and the geometric mean is 0.97 times.}
   \label{fig:bounded-ppcg-sweep}
 \end{figure}
 
@@ -156,7 +158,7 @@ The sweep deliberately extends beyond \name's analytical candidate set by includ
 
 Across the 25 benchmarks, PPCG's default configuration outperforms 71.2\% of the successfully measured sweep configurations on average and exceeds the sweep median in 18 cases.
 
-Taking the fastest configuration of each sweep, sweep-best is $1.245\times$ faster than PPCG's default in geometric mean and faster on all 25 benchmarks. \autoref{fig:bounded-ppcg-sweep} compares \name directly with sweep-best. The plotted ratio is \(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\): values above one favor \name and values below one favor sweep-best. The geometric-mean ratio is $0.973\times$, with \name faster on 12 of the 25 benchmarks and sweep-best faster on the remaining 13. Thus, \name reaches comparable aggregate performance without the hundreds of compile-and-run trials required by the bounded search for each benchmark.
+Taking the fastest configuration of each sweep, sweep-best is $1.25\times$ faster than PPCG's default in geometric mean and faster on all 25 benchmarks. \autoref{fig:bounded-ppcg-sweep} compares \name directly with sweep-best. The plotted ratio is \(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\): values above one favor \name and values below one favor sweep-best. The geometric-mean ratio is $0.97\times$, with \name faster on 12 of the 25 benchmarks and sweep-best faster on the remaining 13. Thus, \name reaches comparable aggregate performance without the hundreds of compile-and-run trials required by the bounded search for each benchmark.
 
 \paragraph{Measured regret.}
 The bounded sweep above varies tile sizes while retaining PPCG's block
@@ -176,7 +178,7 @@ The measured regret is \(0.34\%\) for \texttt{trisolv}, \(20.59\%\) for
 \texttt{atax}, and \(0.08\%\) for \texttt{fdtd-2d}, with a geometric mean
 of \(5.53\%\). The \texttt{syrk} gap is a ranking error inside \(\mathcal{V}(S)\): the measured
 optimum is a legal candidate that the model scores as more expensive than its
-own selection, a separation left to the lower-level effects that
+selection, a separation left to the lower-level effects that
 \autoref{sec:gpu-target-profiling} places outside the cost model.
 
 \FloatBarrier
@@ -223,11 +225,11 @@ own selection, a separation left to the lower-level effects that
     draw=black,
     bar shift=3.5pt,
 ] coordinates {
-    (CNN,5.734)[]
+    (CNN,5.73)[]
     (LSTM,1.015)[]
     (RNN,1.035)[]
     (FNN,1.002)[]
-    (Embed,3.853)[]
+    (Embed,3.85)[]
 };
 \legend{PPCG, \name}
 
@@ -271,21 +273,21 @@ own selection, a separation left to the lower-level effects that
         transform canvas={yshift=1.5pt},
     },
 ] coordinates {
-    (CNN,5.734)[]
+    (CNN,5.73)[]
     (LSTM,1.015)[$\mathbf{1.015}\mathbf{\times}$]
     (RNN,1.035)[$\mathbf{1.035}\mathbf{\times}$]
     (FNN,1.002)[$\mathbf{1.002}\mathbf{\times}$]
-    (Embed,3.853)[]
+    (Embed,3.85)[]
 };
 % Keep the two values clipped by the broken axis in the lower panel.  Their
 % identical y coordinate gives them the same vertical placement, while the
 % explicit bar shift aligns each label with the center of its Mosaic bar.
 \node[font=\tiny, rotate=90, anchor=west, inner sep=0pt]
     at ([xshift=3.5pt]axis cs:CNN,1.055)
-    {$\mathbf{5.734}\mathbf{\times}$};
+    {$\mathbf{5.73}\mathbf{\times}$};
 \node[font=\tiny, rotate=90, anchor=west, inner sep=0pt]
     at ([xshift=3.5pt]axis cs:Embed,1.055)
-    {$\mathbf{3.853}\mathbf{\times}$};
+    {$\mathbf{3.85}\mathbf{\times}$};
 \end{groupplot}
 
 \coordinate (bl) at ($(group c1r1.south west)!0.5!(group c1r2.north west)$);
@@ -340,6 +342,7 @@ For a direct comparison with optimized reference libraries, \autoref{tab:vendor-
 CNN\(^{\dagger}\) & -- & 7.1729 & 7.4175 & 103.4 & 7.9247 & 4.9041 & 61.88 \\
 \bottomrule
 \end{tabular*}
+\vspace{-0.5\baselineskip}
 \end{table}
 
 To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. MetaSchedule searches its own schedule space without restriction, and the times reported for it are the outcome of that search; \name then takes the schedule it selected and re-selects only the tile and thread-block sizes on top of it. The comparison is thus between one analytical pass and a measurement-driven search over the same schedule, at the selection cost each incurs. \name's overhead is a single compile-time analytical solve: for each modeled placement scenario in \(\Sigma\) it assembles one Stage-1 MILP and applies a relaxed-cost tie-break over the Stage-1 optimal discrete configurations (\autoref{sec:solver}), incurred once without generating or running any kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a kernel with NVCC and times it on the GPU, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. Restricting MetaSchedule to tile and block sizes alone would not close this gap, since the dominant cost is compiling and running each candidate rather than the size of the space it draws them from. One two-stage analytical selection pass replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
@@ -772,9 +775,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
     (1.44,1)[226.710ms]
 };
 \addplot[fill=figSevenPurple,draw=black,bar shift=-3pt] coordinates {
-    (0,1.660)[]
-    (0.72,9.227)[]
-    (1.44,4.900)[]
+    (0,1.66)[]
+    (0.72,9.23)[]
+    (1.44,4.90)[]
 };
 \addplot[fill=color2,draw=black,bar shift=3pt] coordinates {
     (0,1)[26.2720ms]
@@ -789,11 +792,11 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
 % Put all Mosaic/PPCG values inside the visible lower-axis portion of the
 % second bar, with the same explicit -3pt shift used by that bar series.
 \node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
-    at ([xshift=-3pt]axis cs:0,1.36) {$1.660\times$};
+    at ([xshift=-3pt]axis cs:0,1.36) {$1.66\times$};
 \node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
-    at ([xshift=-3pt]axis cs:0.72,1.36) {$9.227\times$};
+    at ([xshift=-3pt]axis cs:0.72,1.36) {$9.23\times$};
 \node[font=\tiny\bfseries\boldmath,rotate=90,anchor=east,inner sep=1pt]
-    at ([xshift=-3pt]axis cs:1.44,1.36) {$4.900\times$};
+    at ([xshift=-3pt]axis cs:1.44,1.36) {$4.90\times$};
 \end{groupplot}
 \coordinate (bl) at
     ($(group c1r1.south west)!0.5!(group c1r2.north west)$);

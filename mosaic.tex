@@ -1,12 +1,12 @@
 %%
 %% Mosaic paper repository main file.
 %%
-% TACO submission version.  ACM journals use the acmsmall trim; `review'
-% adds the line numbers reviewers are asked to cite, and `anonymous'
-% suppresses author names, affiliations, e-mails, and ORCIDs.
-% For the camera-ready version, drop `review,anonymous' and restore the
-% author block below.
-\documentclass[acmsmall,review,anonymous,screen]{acmart}
+% TACO submission version.  ACM journals use the acmsmall trim; `anonymous'
+% suppresses author names, affiliations, e-mails, and ORCIDs.  The `review'
+% option is deliberately absent: Manuscript Central adds line numbers to the
+% submitted PDF itself, so setting it here would print them twice.
+% For the camera-ready version, drop `anonymous' and restore the author block.
+\documentclass[acmsmall,anonymous,screen]{acmart}
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{%
@@ -62,19 +62,17 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{wrapfig}
-% Apply the layout rhythm after acmart installs its document-level defaults.
+% acmart's display skips are already 4.2pt, so they are left alone.  Three
+% float lengths are trimmed from the acmart defaults to keep the body inside
+% the 20-page limit: the separation between a top/bottom float and the text
+% (15pt plus 8pt minus 5pt by default) and the space above a caption (12pt).
+% Both remain large enough to read as a deliberate gap.  \intextsep is fixed
+% so a wrapped figure sits the same distance from the body above and below it.
 \AtBeginDocument{%
-  % Keep wrapped figures the same distance from the body above and below.
   \setlength{\intextsep}{8pt}%
-  \setlength{\textfloatsep}{4pt plus 1pt minus 1pt}%
-  \setlength{\floatsep}{8pt plus 2pt minus 2pt}%
-  \setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}%
-  \setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}%
-  \setlength{\abovedisplayskip}{4.2pt plus 1pt}%
-  \setlength{\belowdisplayskip}{4.2pt plus 1pt}%
-  \setlength{\abovedisplayshortskip}{0pt plus 1pt}%
-  \setlength{\belowdisplayshortskip}{2.1pt plus 1pt}%
-  \setlength{\jot}{4pt}%
+  \setlength{\textfloatsep}{10pt plus 2pt minus 3pt}%
+  \setlength{\floatsep}{10pt plus 2pt minus 3pt}%
+  \setlength{\abovecaptionskip}{8pt}%
 }
 \usepackage{listings}
 \definecolor{darkgray}{rgb}{.3,.3,.3}
