@@ -124,7 +124,7 @@ C_d
 \name uses powers of two and exact divisors to keep the analytical candidate space bounded: powers of two match the warp and transaction granularities, and exact divisors avoid partial tiles. \autoref{subsec:bounded-ppcg-sweep} measures what lies outside this set, sweeping unaligned and non-divisor configurations as well. For each \(\tile_d\in C_d\), block candidates are restricted to divisors of \(\tile_d\), keeping
 \(\rblk_d=\tile_d/b_d\) integral; hardware limits are imposed later.
 
-Each array is assigned a memory space from whether it is read-only, written, or accumulated
+Each array is assigned a memory space by whether it is read-only, written, or accumulated
 (\autoref{tab:placement-rules}). Read-only operands form
 \(\Sigma_{\mathit{cand}}\), and \name enumerates
 \(\Sigma=2^{\Sigma_{\mathit{cand}}}\) during solving of
@@ -217,7 +217,7 @@ resident-block bound is
 \left\lfloor \frac{\Tsm}{b_i b_j}\right\rfloor,
 \left\lfloor
 \frac{\Ssm}
-{\operatorname{sizeof}(f)\cdot(\tile_i\tile_k+\tile_k\tile_j)}
+{\operatorname{sizeof}(\mathit{dtype})\cdot(\tile_i\tile_k+\tile_k\tile_j)}
 \right\rfloor\right).
 \]
 The corresponding register budget per thread is
@@ -281,7 +281,7 @@ T_{\mathit{compute}} &= \work \cdot
 \end{aligned}
 \label{eq:block-terms}
 \end{equation}
-\(T_{\mathit{init}}\) charges one accumulator-register initialization per output at the register-access cost \(\Lr\) (\autoref{tab:model-notation}); this is the per-output accumulator setup, distinct from the arithmetic of \(s_{\mathit{out}}\). \(T_{\mathit{write}}\) charges one global write per output, and \(T_{\mathit{sync}}\) two barriers per staging round. In \(T_{\mathit{load}}\), the coalesced load of each staged tile, \(|A|_{\tvec}\) is the tile footprint and \(\gcoal\) the coalescing granularity. The residual register term is \(\creg=\rho_{\mathrm{reg}}\Lr\), where \(\rho_{\mathrm{reg}}\) is the modeled number of register accesses associated with one reduction-body evaluation, derived from the statement metadata. The coefficient is independent of the modeled placement scenario, while its total contribution scales with the per-thread work through \autoref{eq:block-terms}. Here \(n_{\mathit{op}}(s)\) is the operation count of statement \(s\) in the statement metadata, \(s_{\mathit{out}}\) the statement that runs once per output, and \(s_{\mathit{red}}\) the reduction-body statement that runs \(K_{\mathit{total}}\) times; the counts add when a group holds several statements. The \(n_{\mathit{op}}(s_{\mathit{out}})\) work is charged once per output with no \(K_{\mathit{total}}\) factor, while the reduction body carries \(K_{\mathit{total}}\), and the factor \(\work\) scales both to the thread's output count. Both remain terms of \(T_{\mathit{compute}}\) and hence of the per-block cost \(T_{\mathit{block}}\) in \autoref{eq:block-cost}.
+\(T_{\mathit{init}}\) charges one accumulator-register initialization per output at the register-access cost \(\Lr\) (\autoref{tab:model-notation}); this is the per-output accumulator setup, distinct from the arithmetic of \(s_{\mathit{out}}\). \(T_{\mathit{write}}\) charges one global write per output, and \(T_{\mathit{sync}}\) two barriers per staging round. Here \(|A|_{\tvec}\) is the footprint of the staged tile and \(\gcoal\) the coalescing granularity. The residual register term is \(\creg=\rho_{\mathrm{reg}}\Lr\), where \(\rho_{\mathrm{reg}}\) is the modeled number of register accesses associated with one reduction-body evaluation, derived from the statement metadata. The coefficient is independent of the modeled placement scenario, while its total contribution scales with the per-thread work through \autoref{eq:block-terms}. Here \(n_{\mathit{op}}(s)\) is the operation count of statement \(s\) in the statement metadata, \(s_{\mathit{out}}\) the statement that runs once per output, and \(s_{\mathit{red}}\) the reduction-body statement that runs \(K_{\mathit{total}}\) times; the counts add when a group holds several statements. The \(n_{\mathit{op}}(s_{\mathit{out}})\) work is charged once per output with no \(K_{\mathit{total}}\) factor, while the reduction body carries \(K_{\mathit{total}}\), and the factor \(\work\) scales both to the thread's output count. Both remain terms of \(T_{\mathit{compute}}\) and hence of the per-block cost \(T_{\mathit{block}}\) in \autoref{eq:block-cost}.
 
 The link from modeled placement-scenario reasoning to register blocking is the shared-read-per-FMA ratio \(\phi_{m}\) of \autoref{eq:read-ratios}, the operand reads of class \(m\in\{\mathit{smem},\mathit{gmem}\}\) per reduction step divided by the per-thread work \(\work\). A lower \(\phi_{\mathit{smem}}\) spreads each staged read over more arithmetic and lowers the \(\cfma\) term above, as long as the footprint still satisfies C3. For an outer-product contraction the staged reads of each operand depend on a single register factor, so \(\work\phi_{\mathit{smem}}\) is a sum of \(|\mathcal{P}|\) factors whose product is fixed at \(\work\). The arithmetic-mean-geometric-mean (AM-GM) inequality states that a sum of nonnegative terms with a fixed product is smallest when the terms are equal; applying it gives
 \[

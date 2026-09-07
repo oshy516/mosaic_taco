@@ -338,7 +338,7 @@ The shared-memory placement candidates are restricted to read-only references wh
 \definecolor{color5}{RGB}{157,159,163}
 
 
-In this example, the dimension sets defined in \autoref{eq:dimension-roles} give \(\mathcal{P}=\{i,j\}\), which creates \(\tile_i,\tile_j\) and \(b_i,b_j\); \(\mathcal{R}=\{k\}\), which creates \(\tile_k\) but no block dimension. The register-blocking factors \(\rblk_i=\tile_i/b_i\) and \(\rblk_j=\tile_j/b_j\) follow from these tile and block choices rather than entering as separate variables. The read-only operands give \(\Sigma_{\mathit{cand}}=\{A,B\}\), whose four binary-based placement scenarios change the modeled footprint, traffic, and resident-block bound used in \autoref{sec:model}.
+In this example, the dimension sets defined in \autoref{eq:dimension-roles} give \(\mathcal{P}=\{i,j\}\), which creates \(\tile_i,\tile_j\) and \(b_i,b_j\); \(\mathcal{R}=\{k\}\), which creates \(\tile_k\) but no block dimension. The register-blocking factors \(\rblk_i=\tile_i/b_i\) and \(\rblk_j=\tile_j/b_j\) follow from these tile and block choices rather than entering as separate variables. The read-only operands give \(\Sigma_{\mathit{cand}}=\{A,B\}\), whose power set of four placement scenarios changes the modeled footprint, traffic, and resident-block bound used in \autoref{sec:model}.
 
 
 \subsection{GPU Target Profiling}

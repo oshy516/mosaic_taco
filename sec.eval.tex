@@ -44,7 +44,7 @@ ppcg --target=cuda --sizes="\{kernel[id]->tile[$t_1$,...,$t_n$]; kernel[id]->blo
 where the tile and block values are exactly the \(t_*\) and \(b_*\) returned by the solver. The placement scheme \(S\) remains an abstract scenario in \name's model; PPCG independently determines concrete shared-memory staging through its existing promotion and lowering mechanism rather than through directives emitted by \name. TVM analogously determines concrete staging through its own lowering mechanism.
 
 \paragraph{Register and occupancy validation.}
-We validate the resource model on three representative programs, GEMM, ATAX, and Jacobi-2D, which together contain five GPU kernels, by exhaustively compiling all 11,240 candidates that pass C4. Of these, 14 spill registers (\(0.1246\%\)), and all five kernels in the final \name selections are spill-free. Predicted resident blocks per SM exactly match the CUDA Occupancy API for four of the five. The sole mismatch is ATAX, where the model predicts three blocks and the API reports two: register-allocation granularity rounds PTXAS's 42 registers per thread up to an effective 48. The wave count is unchanged. C4 remains a consistency filter, not a predictor of backend register allocation.
+We validate the resource model on three representative programs, GEMM, ATAX, and Jacobi-2D, which together contain five GPU kernels, by exhaustively compiling all 11,240 candidates that pass C4. Of these, 14 spill registers (\(0.12\%\)), and all five kernels in the final \name selections are spill-free. Predicted resident blocks per SM exactly match the CUDA Occupancy API for four of the five. The sole mismatch is ATAX, where the model predicts three blocks and the API reports two: register-allocation granularity rounds PTXAS's 42 registers per thread up to an effective 48. The wave count is unchanged. C4 remains a consistency filter, not a predictor of backend register allocation.
 
 \paragraph{Profile sensitivity.}
 For GEMM, ATAX, and Jacobi-2D, we perturb the global-memory, shared-memory, register, and FMA cost constants one at a time by \(-20\%\), \(-10\%\), \(+10\%\), and \(+20\%\), giving 48 re-solves; all 48 select exactly the same tile sizes, thread-block dimensions, and modeled placement scenario as the original profile. The profile is target-specific rather than kernel- or shape-specific, so it is reused across workloads on the same GPU and regenerated only when the GPU, compute capability, or execution environment changes enough to affect the effective costs.
@@ -108,9 +108,9 @@ seidel-2d & 757.94 & 0.270 & \(1.27\times\) & \(1.51\times\) & \(5.63\times\) & 
 \vspace{-0.5\baselineskip}
 \end{table}
 
-We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils: the union of kernels suitable for CUDA code generation~\cite{ppcg} and those evaluated by EATSS, allowing comparison against both on all three GPUs. \autoref{tab:benchmark} reports, per platform, \name's execution and solver times, its speedups over PPCG and EATSS, and the reduction in selection overhead relative to EATSS; execution times are medians, speedup aggregates are geometric means, and solver-time aggregates are arithmetic means. \name achieves geometric-mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ over PPCG, and measured latency ratios of $1.37\times$, $1.89\times$, and $1.55\times$ relative to EATSS, on the RTX 4090, A100, and V100, respectively. These gains trace to the coupled loop of \autoref{sec:bg-challenges} resolved in one formulation: the quantized wave cost avoids occupancy-boundary cliffs, and the AM--GM balance maximizes reuse per register (\autoref{sec:cost}). The effect is largest on contraction-heavy kernels, where PPCG's fixed heuristic leaves register blocking unbalanced; on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ by recovering \(\rblk_i=\rblk_j=\sqrt{\work}\). The advantage holds as register and shared-memory budgets vary across GPU generations.
+We first evaluate \name on twenty-five PolyBench kernels~\cite{polybench} spanning reductions, contractions, and stencils: the union of kernels suitable for CUDA code generation~\cite{ppcg} and those evaluated by EATSS, allowing comparison against both on all three GPUs. \autoref{tab:benchmark} reports, per platform, \name's execution and solver times, its speedups over PPCG and EATSS, and the reduction in selection overhead relative to EATSS; execution times are medians, speedup aggregates are geometric means, and solver-time aggregates are arithmetic means. \name achieves geometric-mean speedups of $1.21\times$, $1.44\times$, and $1.49\times$ over PPCG, and of $1.37\times$, $1.89\times$, and $1.55\times$ over EATSS, on the RTX 4090, A100, and V100, respectively. These gains trace to the coupled loop of \autoref{sec:bg-challenges} resolved in one formulation: the quantized wave cost avoids occupancy-boundary cliffs, and the AM--GM balance maximizes reuse per register (\autoref{sec:cost}). The effect is largest on contraction-heavy kernels, where PPCG's fixed heuristic leaves register blocking unbalanced; on the A100, \name improves \texttt{symm} by $6.05\times$ and \texttt{syrk} by $5.58\times$ by recovering \(\rblk_i=\rblk_j=\sqrt{\work}\). The advantage holds as register and shared-memory budgets vary across GPU generations.
 
-\name is occasionally within about \(15\%\) of EATSS on the A100 for the small memory-bound kernels \texttt{atax}, \texttt{bicg}, and \texttt{gesummv}, consistent with \autoref{sec:kernel-specialization}: asymmetric reductions and memory-bound kernels gain less from balanced blocking, leaving the MILP less room to improve. \texttt{trmm} and \texttt{trisolv} have triangular, largely serial structure with limited parallel headroom, leaving relatively little room for execution-space improvement. In \autoref{tab:benchmark}, ``--'' marks EATSS failures on \texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}.
+\name is slower than EATSS on the A100 for the small memory-bound kernels \texttt{atax}, \texttt{bicg}, and \texttt{gesummv}, at ratios of \(0.83\times\), \(0.84\times\), and \(0.90\times\) in \autoref{tab:benchmark}, consistent with \autoref{sec:kernel-specialization}: asymmetric reductions and memory-bound kernels gain less from balanced blocking, leaving the MILP less room to improve. \texttt{trmm} and \texttt{trisolv} have triangular, largely serial structure with limited parallel headroom, leaving relatively little room for execution-space improvement. In \autoref{tab:benchmark}, ``--'' marks EATSS failures on \texttt{doitgen}, \texttt{heat-3d}, and \texttt{jacobi-1d}.
 
 \subsection{Bounded PPCG Tile Sweep}
 \label{subsec:bounded-ppcg-sweep}
@@ -156,7 +156,7 @@ To compare \name with an empirical tile search, we perform a deterministic bound
 
 The sweep deliberately extends beyond \name's analytical candidate set by including unaligned and non-divisor tile sizes. Sweep-best therefore serves as an empirical reference over the tested PPCG tile space rather than as the optimum of \name's own discrete domain. For each benchmark, we compute the fraction of successfully measured sweep configurations slower than PPCG's default and report the average of these fractions across all 25 benchmarks.
 
-Across the 25 benchmarks, PPCG's default configuration outperforms 71.2\% of the successfully measured sweep configurations on average and exceeds the sweep median in 18 cases.
+Across the 25 benchmarks, PPCG's default configuration outperforms 71.24\% of the successfully measured sweep configurations on average and exceeds the sweep median in 18 cases.
 
 Taking the fastest configuration of each sweep, sweep-best is $1.25\times$ faster than PPCG's default in geometric mean and faster on all 25 benchmarks. \autoref{fig:bounded-ppcg-sweep} compares \name directly with sweep-best. The plotted ratio is \(T_{\mathrm{sweep\text{-}best}} / T_{\mathrm{Mosaic}}\): values above one favor \name and values below one favor sweep-best. The geometric-mean ratio is $0.97\times$, with \name faster on 12 of the 25 benchmarks and sweep-best faster on the remaining 13. Thus, \name reaches comparable aggregate performance without the hundreds of compile-and-run trials required by the bounded search for each benchmark.
 
@@ -274,8 +274,8 @@ selection, a separation left to the lower-level effects that
     },
 ] coordinates {
     (CNN,5.73)[]
-    (LSTM,1.015)[$\mathbf{1.015}\mathbf{\times}$]
-    (RNN,1.035)[$\mathbf{1.035}\mathbf{\times}$]
+    (LSTM,1.015)[$\mathbf{1.02}\mathbf{\times}$]
+    (RNN,1.035)[$\mathbf{1.04}\mathbf{\times}$]
     (FNN,1.002)[$\mathbf{1.002}\mathbf{\times}$]
     (Embed,3.85)[]
 };
@@ -345,7 +345,7 @@ CNN\(^{\dagger}\) & -- & 7.1729 & 7.4175 & 103.4 & 7.9247 & 4.9041 & 61.88 \\
 \vspace{-0.5\baselineskip}
 \end{table}
 
-To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. MetaSchedule searches its own schedule space without restriction, and the times reported for it are the outcome of that search; \name then takes the schedule it selected and re-selects only the tile and thread-block sizes on top of it. The comparison is thus between one analytical pass and a measurement-driven search over the same schedule, at the selection cost each incurs. \name's overhead is a single compile-time analytical solve: for each modeled placement scenario in \(\Sigma\) it assembles one Stage-1 MILP and applies a relaxed-cost tie-break over the Stage-1 optimal discrete configurations (\autoref{sec:solver}), incurred once without generating or running any kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a kernel with NVCC and times it on the GPU, so the tuning cost grows linearly with the trial budget and is repaid for each new shape or target. Restricting MetaSchedule to tile and block sizes alone would not close this gap, since the dominant cost is compiling and running each candidate rather than the size of the space it draws them from. One two-stage analytical selection pass replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
+To compare \name against search-based autotuning, we integrate it into TVM~\cite{tvm} and compare with MetaSchedule~\cite{metaschedule} across trial budgets. \autoref{fig:network-operator-curves} plots execution time and selection cost for six operators. MetaSchedule searches its own schedule space without restriction, and the times reported for it are the outcome of that search; \name then takes the schedule it selected and re-selects only the tile and thread-block sizes on top of it. The comparison is thus between one analytical pass and a measurement-driven search over the same schedule, at the selection cost each incurs. \name's overhead is a single compile-time analytical solve: for each modeled placement scenario in \(\Sigma\) it assembles one Stage-1 MILP and applies a relaxed-cost tie-break over the Stage-1 optimal discrete configurations (\autoref{sec:solver}), incurred once without generating or running any kernel. MetaSchedule's overhead is instead a runtime measurement loop: every trial compiles a kernel with NVCC and times it on the GPU, so the tuning cost grows linearly with the trial budget and is paid again for each new shape or target. Restricting MetaSchedule to tile and block sizes alone would not close this gap, since the dominant cost is compiling and running each candidate rather than the size of the space it draws them from. One two-stage analytical selection pass replaces hundreds to thousands of compile-and-run trials, the source of the gap of two to four orders of magnitude in \autoref{fig:network-operator-curves}.
 
 \begin{figure}[!htbp]
 \centering
@@ -785,9 +785,9 @@ To compare \name against search-based autotuning, we integrate it into TVM~\cite
     (1.44,1)[5.40400ms]
 };
 \addplot[fill=color4,draw=black,bar shift=9pt] coordinates {
-    (0,1.159)[\textbf{1.159$\times$}]
-    (0.72,1.052)[\textbf{1.052$\times$}]
-    (1.44,1.127)[\textbf{1.127$\times$}]
+    (0,1.159)[\textbf{1.16$\times$}]
+    (0.72,1.052)[\textbf{1.05$\times$}]
+    (1.44,1.127)[\textbf{1.13$\times$}]
 };
 % Put all Mosaic/PPCG values inside the visible lower-axis portion of the
 % second bar, with the same explicit -3pt shift used by that bar series.
@@ -882,23 +882,23 @@ We ablate \name's three components cumulatively; FP-Wave keeps only the quantize
     (2.88,1)[265.793ms]
 };
 \addplot[fill=color3, draw=black, bar shift=0pt] coordinates {
-    (0,1.152)[\textbf{1.152$\times$}]
-    (0.72,1.319)[\textbf{1.319$\times$}]
-    (1.44,1.004)[\textbf{1.004$\times$}]
-    (2.16,1.125)[\textbf{1.125$\times$}]
+    (0,1.152)[\textbf{1.15$\times$}]
+    (0.72,1.319)[\textbf{1.32$\times$}]
+    (1.44,1.004)[\textbf{1.00$\times$}]
+    (2.16,1.125)[\textbf{1.13$\times$}]
     (2.88,2.337)[]
 };
 \addplot[fill=color4, draw=black, bar shift=6pt] coordinates {
     (0,1.827)[]
-    (0.72,1.439)[\textbf{1.439$\times$}]
-    (1.44,1.556)[\textbf{1.556$\times$}]
-    (2.16,1.630)[\textbf{1.630$\times$}]
+    (0.72,1.439)[\textbf{1.44$\times$}]
+    (1.44,1.556)[\textbf{1.56$\times$}]
+    (2.16,1.630)[\textbf{1.63$\times$}]
     (2.88,2.773)[]
 };
 \legend{FP-Wave, RF-Wave, Mosaic}
-\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:0,1.45) {\textbf{1.827$\times$}};
-\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at (axis cs:2.88,1.93) {\textbf{2.337$\times$}};
-\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:2.88,2.28) {\textbf{2.773$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:0,1.45) {\textbf{1.83$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at (axis cs:2.88,1.93) {\textbf{2.34$\times$}};
+\node[font=\tiny, rotate=90, anchor=center, inner sep=0pt] at ([xshift=6pt]axis cs:2.88,2.28) {\textbf{2.77$\times$}};
 \end{axis}
 \end{tikzpicture}
 \caption{Ablation of \name's individual components.}
@@ -906,9 +906,9 @@ We ablate \name's three components cumulatively; FP-Wave keeps only the quantize
 \label{fig:ablation}
 \end{wrapfigure}
 
-It disables both the register-feasibility filter and placement-scenario enumeration. RF-Wave adds the register consistency filter C4 while holding the modeled placement scenario fixed, isolating the filter's effect; full \name further enables placement-scenario enumeration over \(\Sigma\) (\autoref{sec:abstraction}), isolating the effect of placement-scenario reasoning. With FP-Wave as the baseline, RF-Wave improves performance by a geometric mean of $1.32\times$ and full \name by $1.79\times$, the largest gain on CNN, where filtering and placement-aware analytical reasoning together cut the selected configuration from $265.793$~ms to $95.851$~ms.
+It disables both the register-feasibility filter and placement-scenario enumeration. RF-Wave adds the register consistency filter C4 while holding the modeled placement scenario fixed, isolating the filter's effect; full \name further enables placement-scenario enumeration over \(\Sigma\) (\autoref{sec:abstraction}), isolating the effect of placement-scenario reasoning. With FP-Wave as the baseline, RF-Wave improves performance by a geometric mean of $1.32\times$ and full \name by $1.79\times$, the largest gain on CNN, where filtering and placement-aware analytical reasoning together cut the execution time of the selected configuration from $265.793$~ms to $95.851$~ms.
 
 \subsection{Solver Overhead and Scalability}
 \label{subsec:overhead}
 
-Finally, we examine the cost of \name's analytical selection, reported in the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solving in well under one second for most kernels and in a few seconds at worst. The formulation introduces decision variables over the bounded candidate pairs of \autoref{sec:abstraction} and applies the resource constraints of \autoref{sec:constraints} within each per-scenario solve. Its model size is therefore determined by the discrete candidate counts and the small placement-scenario set, rather than by the number of dynamic loop iterations. Relative to EATSS, \name reduces selection overhead by geometric-mean factors of $12.6\times$, $13.6\times$, and $13.9\times$ on RTX 4090, A100, and V100; unlike the latency ratios, this comparison is unaffected by the objective mismatch, since both selectors are analytical. This one-time compile-time cost requires no runtime tuning loop and remains modest across the evaluated kernels.
+Finally, we examine the cost of \name's analytical selection, reported in the solver-time columns of \autoref{tab:benchmark}. \name completes its two-stage solving in well under one second for most kernels and in a few seconds at worst. The formulation introduces decision variables over the bounded candidate pairs of \autoref{sec:abstraction} and applies the resource constraints of \autoref{sec:constraints} within each per-scenario solve. Its model size is therefore determined by the discrete candidate counts and the small placement-scenario set, rather than by the number of dynamic loop iterations. Relative to EATSS, \name reduces selection overhead by geometric-mean factors of $12.6\times$, $13.6\times$, and $13.9\times$ on RTX 4090, A100, and V100; unlike the speedups, this comparison is unaffected by the objective mismatch, since both selectors are analytical. This one-time compile-time cost requires no runtime tuning loop and remains modest across the evaluated kernels.
